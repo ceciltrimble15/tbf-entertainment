@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    color: #1A1A2E;
+    background: #ffffff;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  /* ── Buttons ──────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-brand-blue text-white font-bold uppercase
+           tracking-btn text-[14px] px-8 py-[14px]
+           rounded-btn min-h-[48px] border-2 border-brand-blue
+           transition-all duration-200 cursor-pointer no-underline;
+  }
+  .btn-primary:hover {
+    @apply bg-brand-blue-light shadow-cta -translate-y-px;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-brand-blue font-bold uppercase
+           tracking-btn text-[14px] px-8 py-[14px]
+           rounded-btn min-h-[48px] border-2 border-brand-blue
+           transition-all duration-200 cursor-pointer no-underline;
+  }
+  .btn-secondary:hover {
+    @apply bg-brand-blue text-white -translate-y-px;
+  }
+
+  .btn-white {
+    @apply inline-flex items-center justify-center gap-2
+           bg-white text-brand-blue font-bold uppercase
+           tracking-btn text-[14px] px-8 py-[14px]
+           rounded-btn min-h-[48px] border-2 border-white
+           transition-all duration-200 cursor-pointer no-underline;
+  }
+  .btn-white:hover {
+    @apply bg-brand-surface -translate-y-px shadow-cta;
+  }
+
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-white font-bold uppercase
+           tracking-btn text-[14px] px-8 py-[14px]
+           rounded-btn min-h-[48px] border-2 border-white
+           transition-all duration-200 cursor-pointer no-underline;
+  }
+  .btn-outline-white:hover {
+    @apply bg-white text-brand-blue -translate-y-px;
+  }
+
+  /* ── Cards ────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-card shadow-card p-7;
+  }
+  .card-hover {
+    @apply card transition-all duration-200;
+  }
+  .card-hover:hover {
+    @apply shadow-card-hover -translate-y-1;
+  }
+
+  /* ── Section label ────────────────────────────────────────── */
+  .section-label {
+    @apply text-[12px] font-semibold uppercase tracking-label text-brand-silver;
+  }
+
+  /* ── Flow connector arrow ─────────────────────────────────── */
+  .flow-arrow {
+    @apply text-brand-silver text-2xl flex-shrink-0 mt-[-28px] hidden md:flex items-center;
+  }
+
+  /* ── Step number circle ───────────────────────────────────── */
+  .step-circle {
+    @apply w-14 h-14 rounded-full bg-brand-blue text-white flex items-center justify-center
+           text-xl font-bold flex-shrink-0;
+  }
+
+  /* ── Icon box ─────────────────────────────────────────────── */
+  .icon-box {
+    @apply w-14 h-14 rounded-xl bg-brand-blue/10 flex items-center justify-center
+           text-brand-blue text-2xl flex-shrink-0;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* fade-in-up animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.55s ease both;
+  }
+  .animation-delay-100 { animation-delay: 0.1s; }
+  .animation-delay-200 { animation-delay: 0.2s; }
+  .animation-delay-300 { animation-delay: 0.3s; }
+  .animation-delay-400 { animation-delay: 0.4s; }
+}
