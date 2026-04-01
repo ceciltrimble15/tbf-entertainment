@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const CALENDLY_URL = 'https://calendly.com/YOUR-LINK';
+const CALENDLY_URL = 'https://calendly.com/admin-a1creativeagency/30min/';
 
 /* ─────────────────────────────────────────────────────────────
    SVG ICON LIBRARY  (inline, zero-dependency)

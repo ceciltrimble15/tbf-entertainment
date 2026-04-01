@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(where node:*)"
+      "Bash(where node:*)",
+      "Read(//c/Users/Owner/Desktop/**)",
+      "Bash(powershell -Command \"Compress-Archive -Path ''a1-creative-website\\\\*'' -DestinationPath ''a1-creative-website-deploy.zip'' -Force\")"
     ]
   }
 }

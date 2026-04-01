@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "serve": "npx serve -l $PORT -s . --no-clipboard",
     "build": "vite build",
     "preview": "vite preview"
   },
