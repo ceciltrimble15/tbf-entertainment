@@ -57,12 +57,12 @@ function Reveal({ children, className = '', delay = 0 }) {
    align:   'left' | 'center'
 ───────────────────────────────────────────────────────── */
 const LOGO_HEIGHTS = {
-  nav:       '36px',
-  xs:        '56px',
-  sm:        '80px',
-  md:        '110px',
-  lg:        '160px',
-  watermark: 'clamp(220px, 45vw, 520px)',
+  nav:       '54px',   // +50% — full brand marker, not an icon
+  xs:        '96px',   // +71% — section logos read as presence
+  sm:        '128px',  // +60%
+  md:        '160px',  // +45%
+  lg:        '200px',
+  watermark: 'clamp(260px, 52vw, 610px)', // +15% hero presence
 };
 
 const LOGO_GLOWS = {
@@ -298,8 +298,9 @@ function Footer({ setPage }) {
    BOOK COVER — uses actual cover art
 ───────────────────────────────────────────────────────── */
 function BookCover({ size = 'lg' }) {
-  const w = size === 'lg' ? '220px' : '160px';
-  const h = size === 'lg' ? '300px' : '220px';
+  // +40% dominance on the home/publishing anchor
+  const w = size === 'lg' ? '310px' : '220px';
+  const h = size === 'lg' ? '420px' : '300px';
 
   return (
     <div
@@ -410,14 +411,16 @@ function ConnectForm({ compact = false }) {
 
   if (compact) {
     return (
-      <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+      <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex flex-col sm:flex-row gap-0 max-w-lg mx-auto" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
         <input
-          type="email" placeholder="Your email address" value={email}
+          type="email" placeholder="Enter your email" value={email}
           onChange={(e) => setEmail(e.target.value)} required
-          className={`${baseInput} flex-1`} style={inputStyle}
-          onFocus={onFocus} onBlur={onBlur}
+          className="flex-1 font-body text-sm px-6 py-5 text-white placeholder-tbf-silver-dim outline-none transition-all duration-200 bg-transparent"
+          style={{ border: 'none', background: 'transparent' }}
+          onFocus={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.6)'; }}
+          onBlur={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.3)'; }}
         />
-        <button type="submit" className="btn-blue whitespace-nowrap">Get First Access</button>
+        <button type="submit" className="btn-blue whitespace-nowrap" style={{ borderRadius: 0, padding: '1.1rem 2rem', fontSize: '0.78rem' }}>Get Early Access</button>
       </form>
     );
   }
@@ -506,7 +509,7 @@ function HomePage({ setPage }) {
             <Logo
               size="watermark"
               glow="strong"
-              opacity={0.24}
+              opacity={0.29}
               blur={true}
               align="center"
             />
@@ -519,17 +522,16 @@ function HomePage({ setPage }) {
             <p className="eyebrow mb-6">Est. Now. Built to Last.</p>
           </div>
           <h1
-            className="font-display font-black uppercase text-white leading-none animate-fade-in-up delay-100"
-            style={{ fontSize: 'clamp(3.5rem, 9vw, 8rem)', letterSpacing: '0.04em' }}
+            className="font-display font-black uppercase text-white leading-[0.95] animate-fade-in-up delay-100 max-w-5xl"
+            style={{ fontSize: 'clamp(2.4rem, 5.2vw, 5rem)', letterSpacing: '0.01em' }}
           >
-            TBF<br /><span style={{ color: '#1E90FF' }}>Entertainment</span>
+            Built from reality.<br />
+            <span style={{ color: '#C0C0C0' }}>Nothing added.</span><br />
+            <span style={{ color: '#1E90FF' }}>Everything earned.</span>
           </h1>
-          <div className="w-16 h-px mt-6 mb-8 animate-fade-in-up delay-200" style={{ background: '#1E90FF' }} />
-          <p className="font-body text-tbf-silver max-w-xl leading-relaxed animate-fade-in-up delay-300" style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)' }}>
-            Built from reality. Nothing added. Everything earned.
-          </p>
-          <p className="font-body text-tbf-silver-dim max-w-lg mt-4 leading-relaxed animate-fade-in-up delay-400" style={{ fontSize: '0.95rem' }}>
-            A culture-driven entertainment company building powerful stories, visual identity, and creative expansion through publishing, artistry, and media.
+          <div className="w-16 h-px mt-8 mb-8 animate-fade-in-up delay-200" style={{ background: '#1E90FF' }} />
+          <p className="font-body text-tbf-silver max-w-xl leading-relaxed animate-fade-in-up delay-300" style={{ fontSize: 'clamp(0.98rem, 1.6vw, 1.12rem)' }}>
+            A culture-driven entertainment company shaping story, sound, and visual identity through publishing, artistry, and media.
           </p>
           <div className="flex flex-wrap gap-4 mt-10 animate-fade-in-up delay-500">
             <button onClick={() => go('publishing')} className="btn-blue">Explore Publishing</button>
@@ -610,7 +612,7 @@ function HomePage({ setPage }) {
               <SectionLogo align="center" glow="subtle" />
               <p className="eyebrow mb-4">The Architecture</p>
               <h2 className="font-display font-black uppercase text-white leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
-                Three Lanes. One Vision.
+                Three Lanes. One Direction.
               </h2>
               <div className="w-12 h-px bg-tbf-blue mx-auto mt-5" />
             </div>
@@ -626,17 +628,18 @@ function HomePage({ setPage }) {
                 <div
                   className="group relative p-8 lg:p-10 cursor-pointer transition-all duration-300 h-full flex flex-col"
                   style={{
-                    background: item.active ? 'rgba(30,144,255,0.05)' : 'rgba(17,17,17,0.92)',
-                    border: item.active ? '1px solid rgba(30,144,255,0.3)' : '1px solid #2B2B2B',
+                    background: item.active ? 'rgba(30,144,255,0.09)' : 'rgba(17,17,17,0.92)',
+                    border: item.active ? '1px solid rgba(30,144,255,0.55)' : '1px solid #2B2B2B',
+                    boxShadow: item.active ? '0 0 36px rgba(30,144,255,0.12), inset 0 1px 0 rgba(30,144,255,0.15)' : 'none',
                   }}
                   onClick={() => go(item.page)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.border = '1px solid rgba(30,144,255,0.5)';
-                    e.currentTarget.style.boxShadow = '0 8px 48px rgba(0,0,0,0.6), 0 0 24px rgba(30,144,255,0.1)';
+                    e.currentTarget.style.border = '1px solid rgba(30,144,255,0.7)';
+                    e.currentTarget.style.boxShadow = '0 8px 48px rgba(0,0,0,0.6), 0 0 32px rgba(30,144,255,0.18)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.border = item.active ? '1px solid rgba(30,144,255,0.3)' : '1px solid #2B2B2B';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.border = item.active ? '1px solid rgba(30,144,255,0.55)' : '1px solid #2B2B2B';
+                    e.currentTarget.style.boxShadow = item.active ? '0 0 36px rgba(30,144,255,0.12), inset 0 1px 0 rgba(30,144,255,0.15)' : 'none';
                   }}
                 >
                   {item.active && (
@@ -673,9 +676,9 @@ function HomePage({ setPage }) {
           <Reveal>
             {/* Publishing anchor logo — sm (80px), centered, subtle glow */}
             <SectionLogo align="center" glow="subtle" />
-            <p className="eyebrow mb-4 text-center">Featured Release</p>
-            <h2 className="font-display font-black uppercase text-white leading-none mb-3 text-center" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
-              Publishing Leads<br />the First Chapter
+            <p className="eyebrow mb-4 text-center">The Main Event</p>
+            <h2 className="font-display font-black uppercase text-white leading-none mb-3 text-center" style={{ fontSize: 'clamp(2.2rem, 4.4vw, 3.8rem)' }}>
+              Publishing Leads<br />the First Chapter.
             </h2>
             <div className="w-14 h-px mx-auto mb-6" style={{ background: '#1E90FF' }} />
             <p className="font-body text-tbf-silver max-w-xl mx-auto leading-relaxed mb-12 text-center" style={{ fontSize: '1rem' }}>
@@ -684,14 +687,16 @@ function HomePage({ setPage }) {
           </Reveal>
 
           <div
-            className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center p-8 lg:p-12"
-            style={{ background: '#0D0D0D', border: '1px solid rgba(30,144,255,0.2)', boxShadow: '0 0 80px rgba(30,144,255,0.06)' }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center p-10 lg:p-16"
+            style={{ background: '#0D0D0D', border: '1px solid rgba(30,144,255,0.28)', boxShadow: '0 0 120px rgba(30,144,255,0.10)' }}
           >
             <Reveal delay={100}>
-              <div className="flex flex-col items-center lg:items-start gap-8">
+              <div className="flex flex-col items-center lg:items-start gap-10">
                 <div className="relative">
-                  <div className="absolute -inset-6 pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(30,144,255,0.18) 0%, transparent 70%)' }} />
-                  <BookCover size="lg" />
+                  <div className="absolute -inset-12 pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(30,144,255,0.28) 0%, transparent 70%)' }} />
+                  <div className="relative" style={{ boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px rgba(30,144,255,0.25)' }}>
+                    <BookCover size="lg" />
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 px-5 py-3" style={{ background: 'rgba(30,144,255,0.08)', border: '1px solid rgba(30,144,255,0.25)' }}>
                   <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
@@ -701,7 +706,9 @@ function HomePage({ setPage }) {
             </Reveal>
 
             <Reveal delay={200}>
-              <p className="eyebrow mb-3">Debut Title</p>
+              <div className="inline-block px-3 py-1.5 mb-4" style={{ background: 'rgba(30,144,255,0.12)', border: '1px solid rgba(30,144,255,0.4)' }}>
+                <span className="font-body font-bold uppercase tracking-[0.2em] text-tbf-blue" style={{ fontSize: '0.6rem' }}>Debut Release</span>
+              </div>
               <h3 className="font-display font-black uppercase text-white leading-none mb-4" style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)' }}>
                 Young Gs<br />vs. Old Gs
               </h3>
@@ -777,15 +784,15 @@ function HomePage({ setPage }) {
       {/* ═══════════════════════════════════════════════════
           6. ARTISTRY & MEDIA PREVIEW
       ═══════════════════════════════════════════════════ */}
-      <section className="py-24 lg:py-32" style={{ background: '#0A0A0A' }}>
+      <section className="pt-32 pb-24 lg:pt-40 lg:pb-32" style={{ background: '#0A0A0A' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <Reveal>
-            <div className="text-center mb-16">
-              <p className="eyebrow mb-4">In Development</p>
-              <h2 className="font-display font-black uppercase text-white leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
+            <div className="text-center mb-20">
+              <p className="eyebrow mb-5">In Development</p>
+              <h2 className="font-display font-black uppercase text-white leading-[0.95]" style={{ fontSize: 'clamp(2.4rem, 5vw, 4.2rem)', letterSpacing: '0.01em' }}>
                 The Next Lanes
               </h2>
-              <div className="w-12 h-px bg-tbf-blue mx-auto mt-5" />
+              <div className="w-14 h-px bg-tbf-blue mx-auto mt-6" />
             </div>
           </Reveal>
 
@@ -844,29 +851,29 @@ function HomePage({ setPage }) {
 
         <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 text-center">
           <Reveal>
-            {/* Exit stamp logo — md (110px), centered, medium glow */}
-            <div className="flex justify-center mb-8">
-              <Logo size="md" glow="medium" opacity={0.92} align="center" />
+            {/* Exit stamp logo — md (160px), centered, medium glow */}
+            <div className="flex justify-center mb-10">
+              <Logo size="md" glow="medium" opacity={0.94} align="center" />
             </div>
 
-            <div className="w-12 h-px bg-tbf-blue mx-auto mb-8" />
+            <div className="w-14 h-px bg-tbf-blue mx-auto mb-10" />
 
-            <h2 className="font-display font-black uppercase text-white leading-none mb-5" style={{ fontSize: 'clamp(2.2rem, 5vw, 4rem)' }}>
-              The First Chapter<br />Is Live.
+            <h2 className="font-display font-black uppercase text-white leading-[0.95] mb-6" style={{ fontSize: 'clamp(2.2rem, 5vw, 4.2rem)', letterSpacing: '0.01em' }}>
+              This Is Where It Started.<br /><span style={{ color: '#C0C0C0' }}>The Rest Is Being Built.</span>
             </h2>
-            <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '1rem' }}>
-              The rest is being built with intent.
-            </p>
-            <p className="font-body text-tbf-silver-dim leading-relaxed mb-10" style={{ fontSize: '0.9rem', maxWidth: '480px', margin: '0 auto 40px' }}>
-              Publishing is active. Artistry and media are in development. TBF Entertainment is building in public — follow the build or step inside now.
+            <p className="font-body text-tbf-silver leading-relaxed mb-12" style={{ fontSize: '1.05rem', maxWidth: '560px', margin: '0 auto 48px' }}>
+              Publishing is active. Artistry and media are in motion. Step in early and follow the build.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-4 mb-10">
+            <div className="flex flex-wrap justify-center gap-4 mb-12">
               <button onClick={() => go('publishing')} className="btn-blue">Enter Publishing</button>
               <button onClick={() => go('connect')}    className="btn-outline-blue">Connect</button>
             </div>
 
-            <ConnectForm compact />
+            <div className="max-w-lg mx-auto">
+              <p className="eyebrow mb-4">Get Early Access</p>
+              <ConnectForm compact />
+            </div>
           </Reveal>
         </div>
       </section>
