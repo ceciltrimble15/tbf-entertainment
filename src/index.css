@@ -95,10 +95,19 @@
     0%, 100% { box-shadow: 0 0 24px rgba(30,144,255,0.3); }
     50%       { box-shadow: 0 0 48px rgba(30,144,255,0.55); }
   }
+  @keyframes heroDrift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(-6px, -10px, 0) scale(1.015); }
+  }
 
   .animate-fade-in-up  { animation: fadeInUp 0.65s cubic-bezier(0.22,1,0.36,1) both; }
   .animate-fade-in     { animation: fadeIn 0.65s ease both; }
   .animate-pulse-glow  { animation: pulseGlow 3s ease-in-out infinite; }
+  .animate-hero-drift  { animation: heroDrift 18s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-hero-drift { animation: none; }
+  }
 
   .delay-100 { animation-delay: 0.1s; }
   .delay-200 { animation-delay: 0.2s; }

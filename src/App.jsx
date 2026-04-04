@@ -478,7 +478,7 @@ function HomePage({ setPage }) {
           slight blur, strong blue glow behind it.
           Headline text sits on top — do NOT remove.
       ═══════════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden" style={{ background: '#0A0A0A' }}>
+      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden grain" style={{ background: '#0A0A0A' }}>
         {/* Cinematic grid */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -488,27 +488,29 @@ function HomePage({ setPage }) {
           }}
         />
 
-        {/* Blue glow orb behind watermark */}
+        {/* Blue glow orb — shifted right to counterweight left-aligned headline */}
         <div
           className="absolute pointer-events-none"
           style={{
             inset: 0,
-            background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(30,144,255,0.09) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 60% 55% at 72% 42%, rgba(30,144,255,0.11) 0%, transparent 70%)',
           }}
         />
 
-        {/* Watermark logo — centered, behind content, z-index 1 */}
+        {/* Watermark logo — right third on desktop, top-center on mobile, drifts over 18s */}
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          style={{ zIndex: 1 }}
+          className="absolute inset-0 pointer-events-none flex items-center justify-center md:justify-end md:pr-[6vw]"
+          style={{ zIndex: 1, transform: 'translateY(-14%)' }}
         >
-          <Logo
-            size="watermark"
-            glow="strong"
-            opacity={0.32}
-            blur={true}
-            align="center"
-          />
+          <div className="animate-hero-drift">
+            <Logo
+              size="watermark"
+              glow="strong"
+              opacity={0.24}
+              blur={true}
+              align="center"
+            />
+          </div>
         </div>
 
         {/* Hero content — z-index 2, above watermark */}
