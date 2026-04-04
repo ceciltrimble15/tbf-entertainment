@@ -37,27 +37,42 @@ function Reveal({ children, className = '', delay = 0 }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   TBF LOGO SYSTEM
-   size: 'nav' | 'sm' | 'md' | 'lg' | 'watermark'
-   glow: 'none' | 'subtle' | 'medium' | 'strong'
-   align: 'left' | 'center'
+   TBF LOGO IMAGE COMPONENT
+
+   The actual logo image (hat + TBF ENTERTAINMENT) is served
+   from /logo.png in the public directory.
+
+   size:    'nav'       → height 36px  (nav bar)
+            'xs'        → height 56px  (section dividers)
+            'sm'        → height 80px  (publishing anchor)
+            'md'        → height 110px (footer / CTA)
+            'lg'        → height 160px (larger feature placements)
+            'watermark' → height 45vw, max 520px (hero bg)
+
+   glow:    'none' | 'subtle' | 'medium' | 'strong'
+            Silver + blue drop-shadow system, dark bg only.
+
+   opacity: 0–1  (use low values for watermarks / textures)
+   blur:    true/false (adds CSS blur for watermark softness)
+   align:   'left' | 'center'
 ───────────────────────────────────────────────────────── */
-const LOGO_SIZES = {
-  nav:       { tbf: '1.1rem',              ent: '0.42rem', gap: '2px'  },
-  sm:        { tbf: '2.2rem',              ent: '0.65rem', gap: '3px'  },
-  md:        { tbf: '3.5rem',              ent: '0.85rem', gap: '5px'  },
-  lg:        { tbf: '5.5rem',              ent: '1.1rem',  gap: '7px'  },
-  watermark: { tbf: 'clamp(7rem,18vw,13rem)', ent: '1.6rem',  gap: '10px' },
+const LOGO_HEIGHTS = {
+  nav:       '36px',
+  xs:        '56px',
+  sm:        '80px',
+  md:        '110px',
+  lg:        '160px',
+  watermark: 'clamp(220px, 45vw, 520px)',
 };
 
 const LOGO_GLOWS = {
-  none:   {},
-  subtle: { filter: 'drop-shadow(0 0 6px rgba(192,192,192,0.18)) drop-shadow(0 0 14px rgba(30,144,255,0.18))' },
-  medium: { filter: 'drop-shadow(0 0 10px rgba(192,192,192,0.25)) drop-shadow(0 0 24px rgba(30,144,255,0.30))' },
-  strong: { filter: 'drop-shadow(0 0 16px rgba(192,192,192,0.35)) drop-shadow(0 0 40px rgba(30,144,255,0.50))' },
+  none:   '',
+  subtle: 'drop-shadow(0 0 8px rgba(30,144,255,0.22)) drop-shadow(0 0 4px rgba(192,192,192,0.12))',
+  medium: 'drop-shadow(0 0 18px rgba(30,144,255,0.38)) drop-shadow(0 0 8px rgba(192,192,192,0.18))',
+  strong: 'drop-shadow(0 0 36px rgba(30,144,255,0.58)) drop-shadow(0 0 18px rgba(192,192,192,0.30))',
 };
 
-function TBFLogo({
+function Logo({
   size    = 'md',
   glow    = 'none',
   opacity = 1,
@@ -65,47 +80,33 @@ function TBFLogo({
   align   = 'left',
   onClick,
   style   = {},
+  className = '',
 }) {
-  const s = LOGO_SIZES[size] || LOGO_SIZES.md;
-  const glowStyle = LOGO_GLOWS[glow] || {};
-  const alignClass = align === 'center' ? 'items-center' : 'items-start';
+  const h  = LOGO_HEIGHTS[size] || LOGO_HEIGHTS.md;
+  const gf = LOGO_GLOWS[glow] || '';
+  const bf = blur ? 'blur(1.2px)' : '';
+  const filterVal = [bf, gf].filter(Boolean).join(' ') || undefined;
 
   return (
     <div
       onClick={onClick}
-      className={`flex flex-col ${alignClass} ${onClick ? 'cursor-pointer' : ''}`}
-      style={{
-        opacity,
-        filter: blur
-          ? `blur(0.8px) ${glowStyle.filter || ''}`
-          : (glowStyle.filter || ''),
-        transition: 'opacity 0.3s, filter 0.3s',
-        ...style,
-      }}
+      className={`flex ${align === 'center' ? 'justify-center' : 'justify-start'} ${onClick ? 'cursor-pointer select-none' : 'select-none'} ${className}`}
+      style={{ opacity, ...style }}
     >
-      <span
-        className="font-display font-black uppercase leading-none"
+      <img
+        src="/logo.png"
+        alt="TBF Entertainment"
+        draggable={false}
         style={{
-          fontSize: s.tbf,
-          letterSpacing: '0.2em',
-          color: '#C0C0C0',
-          lineHeight: 1,
+          height: h,
+          width: 'auto',
+          objectFit: 'contain',
+          display: 'block',
+          filter: filterVal,
+          pointerEvents: onClick ? 'auto' : 'none',
+          transition: 'filter 0.3s, opacity 0.3s',
         }}
-      >
-        TBF
-      </span>
-      <span
-        className="font-body uppercase leading-none"
-        style={{
-          fontSize: s.ent,
-          letterSpacing: '0.3em',
-          marginTop: s.gap,
-          color: '#1E90FF',
-          fontWeight: 600,
-        }}
-      >
-        ENTERTAINMENT
-      </span>
+      />
     </div>
   );
 }
@@ -141,8 +142,9 @@ function Nav({ page, setPage }) {
       }}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16 lg:h-20">
-        {/* Nav Logo — minimal glow, 32–40px height */}
-        <TBFLogo
+
+        {/* Nav Logo — 36px height, no glow (recognition through repetition) */}
+        <Logo
           size="nav"
           glow="none"
           align="left"
@@ -222,14 +224,13 @@ function Footer({ setPage }) {
     <footer style={{ background: '#060606', borderTop: '1px solid #1A1A1A' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
-          {/* Brand — Footer Logo Signature */}
+
+          {/* Brand column — full logo signature, no heavy glow */}
           <div className="md:col-span-2">
-            {/* Footer Logo: cleanest version, no heavy glow */}
-            <TBFLogo size="md" glow="none" align="left" style={{ marginBottom: '14px' }} />
-            {/* Brand tagline */}
+            <Logo size="md" glow="none" align="left" style={{ marginBottom: '14px' }} />
             <p
-              className="font-body uppercase tracking-[0.16em] mb-4"
-              style={{ fontSize: '0.65rem', color: '#A9A9A9' }}
+              className="font-body uppercase tracking-[0.16em] mb-5"
+              style={{ fontSize: '0.62rem', color: '#A9A9A9' }}
             >
               Built from reality. Nothing added. Everything earned.
             </p>
@@ -248,7 +249,7 @@ function Footer({ setPage }) {
             </div>
           </div>
 
-          {/* Nav */}
+          {/* Navigate */}
           <div>
             <p className="eyebrow mb-5">Navigate</p>
             <div className="flex flex-col gap-3">
@@ -294,42 +295,47 @@ function Footer({ setPage }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   BOOK COVER COMPONENT
+   BOOK COVER — uses actual cover art
 ───────────────────────────────────────────────────────── */
 function BookCover({ size = 'lg' }) {
   const w = size === 'lg' ? '220px' : '160px';
   const h = size === 'lg' ? '300px' : '220px';
-  const titleSize = size === 'lg' ? '1.35rem' : '1rem';
 
   return (
     <div
-      className="relative flex-shrink-0"
+      className="relative flex-shrink-0 overflow-hidden"
       style={{
-        width: w, height: h,
-        background: 'linear-gradient(145deg, #0D0D0D 0%, #1A1A1A 100%)',
-        border: '1px solid #2B2B2B',
-        boxShadow: '8px 12px 48px rgba(0,0,0,0.8), 0 0 32px rgba(30,144,255,0.12)',
+        width: w,
+        height: h,
+        boxShadow: '8px 16px 56px rgba(0,0,0,0.85), 0 0 40px rgba(30,144,255,0.15)',
+        border: '1px solid rgba(30,144,255,0.15)',
       }}
     >
-      <div className="absolute left-0 top-0 bottom-0" style={{ width: '8px', background: '#1E90FF', opacity: 0.9 }} />
-      <div className="absolute inset-0 flex flex-col justify-between p-5 pl-7">
-        <div>
-          <div className="font-body text-tbf-blue uppercase tracking-[0.2em] mb-2" style={{ fontSize: '0.5rem' }}>
-            TBF Entertainment Publishing
-          </div>
-          <div className="w-8 h-px" style={{ background: '#1E90FF' }} />
-        </div>
-        <div>
-          <div className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: titleSize }}>
-            Young Gs<br />vs.<br />Old Gs
-          </div>
-          <div className="w-6 h-px mb-3" style={{ background: '#1E90FF' }} />
-          <div className="font-body text-tbf-silver-dim uppercase" style={{ fontSize: '0.55rem', letterSpacing: '0.1em' }}>
-            TBF Entertainment
-          </div>
-        </div>
-      </div>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%)' }} />
+      <img
+        src="/book-cover.png"
+        alt="Young Gs vs Old Gs — TBF Entertainment"
+        draggable={false}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'top center',
+          display: 'block',
+        }}
+      />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SECTION LOGO DIVIDER
+   Small logo mark above section headlines.
+   size 'xs' (56px) for mid-scroll marks.
+───────────────────────────────────────────────────────── */
+function SectionLogo({ align = 'center', glow = 'subtle' }) {
+  return (
+    <div className={`flex ${align === 'center' ? 'justify-center' : 'justify-start'} mb-6`}>
+      <Logo size="xs" glow={glow} opacity={0.82} align={align} />
     </div>
   );
 }
@@ -382,9 +388,9 @@ function PageHero({ eyebrow, title, titleAccent, subtitle }) {
    CONNECT FORM
 ───────────────────────────────────────────────────────── */
 function ConnectForm({ compact = false }) {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [type, setType] = useState('General');
+  const [email, setEmail]   = useState('');
+  const [name, setName]     = useState('');
+  const [type, setType]     = useState('General');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -392,11 +398,6 @@ function ConnectForm({ compact = false }) {
   const onFocus = (e) => { e.target.style.borderColor = 'rgba(30,144,255,0.5)'; };
   const onBlur  = (e) => { e.target.style.borderColor = '#2B2B2B'; };
   const baseInput = 'w-full font-body text-sm px-5 py-4 text-white placeholder-tbf-silver-dim outline-none transition-all duration-200';
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
 
   if (submitted) {
     return (
@@ -409,7 +410,7 @@ function ConnectForm({ compact = false }) {
 
   if (compact) {
     return (
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+      <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
         <input
           type="email" placeholder="Your email address" value={email}
           onChange={(e) => setEmail(e.target.value)} required
@@ -422,7 +423,7 @@ function ConnectForm({ compact = false }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex flex-col gap-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="eyebrow block mb-2">Name</label>
@@ -472,52 +473,53 @@ function HomePage({ setPage }) {
   return (
     <>
       {/* ═══════════════════════════════════════════════════
-          1. HERO — Primary identity hit
-          Watermark logo: 60–70% width, 30–40% opacity,
-          slight blur, blue radial glow behind it.
+          1. HERO
+          Watermark logo: centered, 45vw height, 32% opacity,
+          slight blur, strong blue glow behind it.
+          Headline text sits on top — do NOT remove.
       ═══════════════════════════════════════════════════ */}
       <section className="relative min-h-screen flex flex-col justify-center overflow-hidden" style={{ background: '#0A0A0A' }}>
         {/* Cinematic grid */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `linear-gradient(rgba(30,144,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.03) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(30,144,255,0.028) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.028) 1px, transparent 1px)`,
             backgroundSize: '80px 80px',
           }}
         />
 
-        {/* ── Watermark logo — centered, behind content ── */}
+        {/* Blue glow orb behind watermark */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            inset: 0,
+            background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(30,144,255,0.09) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Watermark logo — centered, behind content, z-index 1 */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{ zIndex: 1 }}
         >
-          {/* Blue radial glow behind watermark */}
-          <div
-            style={{
-              position: 'absolute',
-              width: '70vw',
-              height: '70vw',
-              maxWidth: '900px',
-              maxHeight: '900px',
-              background: 'radial-gradient(ellipse at center, rgba(30,144,255,0.10) 0%, transparent 65%)',
-            }}
-          />
-          {/* Watermark wordmark */}
-          <TBFLogo
+          <Logo
             size="watermark"
             glow="strong"
-            opacity={0.34}
+            opacity={0.32}
             blur={true}
             align="center"
           />
         </div>
 
-        {/* Hero content — above watermark */}
+        {/* Hero content — z-index 2, above watermark */}
         <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-32 pb-24" style={{ zIndex: 2 }}>
           <div className="animate-fade-in-up">
             <p className="eyebrow mb-6">Est. Now. Built to Last.</p>
           </div>
-          <h1 className="font-display font-black uppercase text-white leading-none animate-fade-in-up delay-100" style={{ fontSize: 'clamp(3.5rem, 9vw, 8rem)', letterSpacing: '0.04em' }}>
+          <h1
+            className="font-display font-black uppercase text-white leading-none animate-fade-in-up delay-100"
+            style={{ fontSize: 'clamp(3.5rem, 9vw, 8rem)', letterSpacing: '0.04em' }}
+          >
             TBF<br /><span style={{ color: '#1E90FF' }}>Entertainment</span>
           </h1>
           <div className="w-16 h-px mt-6 mb-8 animate-fade-in-up delay-200" style={{ background: '#1E90FF' }} />
@@ -568,9 +570,7 @@ function HomePage({ setPage }) {
                       border: item.active ? '1px solid rgba(30,144,255,0.35)' : '1px solid #2B2B2B',
                     }}
                   >
-                    {item.active && (
-                      <div className="font-body font-semibold uppercase tracking-widest text-tbf-blue" style={{ fontSize: '0.55rem' }}>Active</div>
-                    )}
+                    {item.active && <div className="font-body font-semibold uppercase tracking-widest text-tbf-blue" style={{ fontSize: '0.55rem' }}>Active</div>}
                     <p className="font-display font-bold uppercase text-white tracking-wider text-sm">{item.label}</p>
                     <p className="font-body text-tbf-silver-dim" style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>{item.desc}</p>
                   </div>
@@ -583,27 +583,29 @@ function HomePage({ setPage }) {
 
       {/* ═══════════════════════════════════════════════════
           3. THREE PILLARS
-          Faint oversized logo watermark as section BG
-          (5–10% opacity, no glow).
+          Section logo divider above headline.
+          Faint logo pattern texture at 5–8% opacity.
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-32 relative overflow-hidden" style={{ background: '#060606' }}>
-        {/* Faint logo texture — single oversized faded logo, 5–8% opacity */}
+        {/* Ultra-faint logo texture — single oversized, ~6% opacity */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{ zIndex: 0 }}
         >
-          <TBFLogo
+          <Logo
             size="watermark"
             glow="none"
-            opacity={0.055}
+            opacity={0.06}
             align="center"
-            style={{ transform: 'scale(2.2)', transformOrigin: 'center' }}
+            style={{ transform: 'scale(2.4)', transformOrigin: 'center' }}
           />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
           <Reveal>
             <div className="text-center mb-16">
+              {/* Section divider logo — 56px, subtle glow */}
+              <SectionLogo align="center" glow="subtle" />
               <p className="eyebrow mb-4">The Architecture</p>
               <h2 className="font-display font-black uppercase text-white leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
                 Three Lanes. One Vision.
@@ -614,15 +616,15 @@ function HomePage({ setPage }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { label: 'Artistry',    icon: '♪', desc: 'Independent artist collaborations, music-driven storytelling, and culture-centered sound development.', page: 'artistry', active: false },
-              { label: 'Media',       icon: '◎', desc: 'Visual storytelling, interviews, creative content, and cinematic media expression.', page: 'media', active: false },
-              { label: 'Publishing',  icon: '▣', desc: 'Books, street-rooted narratives, original storytelling, and a growing written catalog.', page: 'publishing', active: true },
+              { label: 'Artistry',   icon: '♪', desc: 'Independent artist collaborations, music-driven storytelling, and culture-centered sound development.', page: 'artistry', active: false },
+              { label: 'Media',      icon: '◎', desc: 'Visual storytelling, interviews, creative content, and cinematic media expression.', page: 'media',    active: false },
+              { label: 'Publishing', icon: '▣', desc: 'Books, street-rooted narratives, original storytelling, and a growing written catalog.',              page: 'publishing', active: true },
             ].map((item, i) => (
               <Reveal key={item.label} delay={i * 120}>
                 <div
                   className="group relative p-8 lg:p-10 cursor-pointer transition-all duration-300 h-full flex flex-col"
                   style={{
-                    background: item.active ? 'rgba(30,144,255,0.05)' : 'rgba(17,17,17,0.9)',
+                    background: item.active ? 'rgba(30,144,255,0.05)' : 'rgba(17,17,17,0.92)',
                     border: item.active ? '1px solid rgba(30,144,255,0.3)' : '1px solid #2B2B2B',
                   }}
                   onClick={() => go(item.page)}
@@ -657,20 +659,18 @@ function HomePage({ setPage }) {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          4. PUBLISHING ANCHOR — Credibility link
-          Small logo (80–120px) centered above headline,
-          slight glow (10–15%).
+          4. PUBLISHING ANCHOR
+          Logo above "Featured Release" — 80px, subtle glow.
+          Credibility link: brand → product → proof.
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
         <div className="absolute right-0 top-0 bottom-0 w-px pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(30,144,255,0.4), transparent)' }} />
         <div className="absolute pointer-events-none" style={{ width: '800px', height: '800px', background: 'radial-gradient(circle, rgba(30,144,255,0.06) 0%, transparent 65%)', right: '-200px', top: '50%', transform: 'translateY(-50%)' }} />
 
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          {/* Publishing Anchor Logo — centered, 80–120px, slight glow */}
           <Reveal>
-            <div className="flex flex-col items-center mb-10">
-              <TBFLogo size="sm" glow="subtle" opacity={0.85} align="center" />
-            </div>
+            {/* Publishing anchor logo — sm (80px), centered, subtle glow */}
+            <SectionLogo align="center" glow="subtle" />
             <p className="eyebrow mb-4 text-center">Featured Release</p>
             <h2 className="font-display font-black uppercase text-white leading-none mb-3 text-center" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
               Publishing Leads<br />the First Chapter
@@ -688,7 +688,7 @@ function HomePage({ setPage }) {
             <Reveal delay={100}>
               <div className="flex flex-col items-center lg:items-start gap-8">
                 <div className="relative">
-                  <div className="absolute -inset-6 pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(30,144,255,0.15) 0%, transparent 70%)' }} />
+                  <div className="absolute -inset-6 pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(30,144,255,0.18) 0%, transparent 70%)' }} />
                   <BookCover size="lg" />
                 </div>
                 <div className="flex items-center gap-3 px-5 py-3" style={{ background: 'rgba(30,144,255,0.08)', border: '1px solid rgba(30,144,255,0.25)' }}>
@@ -723,7 +723,6 @@ function HomePage({ setPage }) {
                   </div>
                 ))}
               </div>
-              {/* CTAs: View Publishing + Get First Access */}
               <div className="flex flex-wrap gap-3">
                 <button onClick={() => go('publishing')} className="btn-blue">View Publishing</button>
                 <button onClick={() => go('connect')} className="btn-outline-blue">Get First Access</button>
@@ -832,21 +831,20 @@ function HomePage({ setPage }) {
 
       {/* ═══════════════════════════════════════════════════
           7. FINAL CTA — Memory lock / Exit stamp
-          Logo: medium, centered, light glow.
-          Copy: "The first chapter is live…"
+          Logo: md (110px), centered, medium glow.
+          "The first chapter is live."
           CTAs: Enter Publishing | Connect
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#060606' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.025) 1px, transparent 1px)`, backgroundSize: '60px 60px' }} />
-
-        {/* Blue glow orb behind logo */}
-        <div className="absolute pointer-events-none" style={{ width: '500px', height: '300px', background: 'radial-gradient(ellipse, rgba(30,144,255,0.12) 0%, transparent 70%)', top: '50%', left: '50%', transform: 'translate(-50%, -80%)' }} />
+        {/* Blue glow orb */}
+        <div className="absolute pointer-events-none" style={{ width: '600px', height: '400px', background: 'radial-gradient(ellipse, rgba(30,144,255,0.11) 0%, transparent 70%)', top: '30%', left: '50%', transform: 'translateX(-50%)' }} />
 
         <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 text-center">
           <Reveal>
-            {/* Final CTA Logo — medium size, centered, light glow */}
+            {/* Exit stamp logo — md (110px), centered, medium glow */}
             <div className="flex justify-center mb-8">
-              <TBFLogo size="md" glow="medium" opacity={0.9} align="center" />
+              <Logo size="md" glow="medium" opacity={0.92} align="center" />
             </div>
 
             <div className="w-12 h-px bg-tbf-blue mx-auto mb-8" />
@@ -878,10 +876,7 @@ function HomePage({ setPage }) {
    PUBLISHING PAGE
 ───────────────────────────────────────────────────────── */
 function PublishingPage({ setPage }) {
-  const go = (p) => {
-    setPage(p);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
     <>
@@ -892,14 +887,13 @@ function PublishingPage({ setPage }) {
         subtitle="Street-rooted narratives, original storytelling, and a growing written catalog built for cultural longevity. TBF Publishing is where the work is real and the first release is already in motion."
       />
 
-      {/* Identity pillars */}
       <section className="py-20" style={{ background: '#0A0A0A' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: '▣', title: 'Original Stories',     desc: 'Every title in the TBF catalog is built on authentic voice, cultural truth, and storytelling with purpose.' },
-              { icon: '◈', title: 'Long-Term Catalog',    desc: 'We are building a library — not chasing a moment. Each release adds depth and range to the TBF Publishing catalog.' },
-              { icon: '◉', title: 'Culture-First Voice',  desc: 'TBF Publishing is rooted in street culture, generational stories, and voices that the mainstream often sidelines.' },
+              { icon: '▣', title: 'Original Stories',    desc: 'Every title in the TBF catalog is built on authentic voice, cultural truth, and storytelling with purpose.' },
+              { icon: '◈', title: 'Long-Term Catalog',   desc: 'We are building a library — not chasing a moment. Each release adds depth and range to the TBF Publishing catalog.' },
+              { icon: '◉', title: 'Culture-First Voice', desc: 'TBF Publishing is rooted in street culture, generational stories, and voices that the mainstream often sidelines.' },
             ].map((item, i) => (
               <Reveal key={item.title} delay={i * 120}>
                 <div className="p-7 h-full" style={{ background: '#111111', border: '1px solid #2B2B2B' }}>
@@ -913,7 +907,7 @@ function PublishingPage({ setPage }) {
         </div>
       </section>
 
-      {/* Featured title */}
+      {/* Featured title — full display */}
       <section className="py-24 lg:py-36" style={{ background: '#060606' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <Reveal>
@@ -1016,10 +1010,7 @@ function PublishingPage({ setPage }) {
    ARTISTRY PAGE
 ───────────────────────────────────────────────────────── */
 function ArtistryPage({ setPage }) {
-  const go = (p) => {
-    setPage(p);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
     <>
@@ -1043,10 +1034,9 @@ function ArtistryPage({ setPage }) {
                 TBF Entertainment's artistry division is structured for independent artist collaborations — not major label mimicry. We are building around creative originality, cultural authenticity, and strategic long-term catalog development.
               </p>
               <p className="font-body text-tbf-silver-dim leading-relaxed" style={{ fontSize: '0.9rem' }}>
-                This is a lane for artists who operate with discipline, have a clear point of view, and are building something with lasting value. If that describes your work, TBF is paying attention.
+                This is a lane for artists who operate with discipline, have a clear point of view, and are building something with lasting value.
               </p>
             </Reveal>
-
             <Reveal delay={150}>
               <div className="flex flex-col gap-4">
                 {[
@@ -1121,10 +1111,7 @@ function ArtistryPage({ setPage }) {
    MEDIA PAGE
 ───────────────────────────────────────────────────────── */
 function MediaPage({ setPage }) {
-  const go = (p) => {
-    setPage(p);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
     <>
@@ -1139,9 +1126,9 @@ function MediaPage({ setPage }) {
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: '◎', title: 'Visual Storytelling',         desc: 'Cinematic content that carries the TBF narrative beyond the page — documentary-style, editorial, and original formats.' },
-              { icon: '◈', title: 'Interviews & Conversations',  desc: 'Real conversations with real voices. TBF Media will feature artists, creators, and culture-builders in long-form format.' },
-              { icon: '▦', title: 'Creative Media Expression',   desc: 'Short-form and long-form content rooted in culture, creativity, and the stories TBF is actively building across all lanes.' },
+              { icon: '◎', title: 'Visual Storytelling',        desc: 'Cinematic content that carries the TBF narrative beyond the page — documentary-style, editorial, and original formats.' },
+              { icon: '◈', title: 'Interviews & Conversations', desc: 'Real conversations with real voices. TBF Media will feature artists, creators, and culture-builders in long-form format.' },
+              { icon: '▦', title: 'Creative Media Expression',  desc: 'Short-form and long-form content rooted in culture, creativity, and the stories TBF is actively building across all lanes.' },
             ].map((item, i) => (
               <Reveal key={item.title} delay={i * 120}>
                 <div className="p-8 h-full flex flex-col" style={{ background: '#111111', border: '1px solid #2B2B2B' }}>
@@ -1235,9 +1222,7 @@ function ConnectPage() {
                 </h2>
                 <div className="blue-line" />
               </Reveal>
-              <Reveal delay={100}>
-                <ConnectForm />
-              </Reveal>
+              <Reveal delay={100}><ConnectForm /></Reveal>
             </div>
 
             <div className="flex flex-col gap-5">
