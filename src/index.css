@@ -10,106 +10,142 @@
   }
 
   body {
-    font-family: 'Outfit', system-ui, sans-serif;
-    color: #1A1A2E;
-    background: #ffffff;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #C0C0C0;
+    background: #0A0A0A;
     overflow-x: hidden;
+  }
+
+  * {
+    box-sizing: border-box;
   }
 }
 
 @layer components {
-  /* ── Buttons ──────────────────────────────────────────────── */
-  .btn-primary {
+  /* ── Buttons ──────────────────────────────── */
+  .btn-blue {
     @apply inline-flex items-center justify-center gap-2
-           bg-brand-blue text-white font-bold uppercase
-           tracking-btn text-[14px] px-8 py-[14px]
-           rounded-btn min-h-[48px] border-2 border-brand-blue
-           transition-all duration-200 cursor-pointer no-underline;
+           bg-tbf-blue text-white font-semibold uppercase
+           tracking-[0.12em] text-sm px-8 py-4
+           border border-tbf-blue
+           transition-all duration-300 cursor-pointer no-underline;
   }
-  .btn-primary:hover {
-    @apply bg-brand-blue-light shadow-cta -translate-y-px;
+  .btn-blue:hover {
+    @apply bg-tbf-blue-dim shadow-blue-glow -translate-y-px;
   }
 
-  .btn-secondary {
+  .btn-outline-blue {
     @apply inline-flex items-center justify-center gap-2
-           bg-transparent text-brand-blue font-bold uppercase
-           tracking-btn text-[14px] px-8 py-[14px]
-           rounded-btn min-h-[48px] border-2 border-brand-blue
-           transition-all duration-200 cursor-pointer no-underline;
+           bg-transparent text-tbf-blue font-semibold uppercase
+           tracking-[0.12em] text-sm px-8 py-4
+           border border-tbf-blue
+           transition-all duration-300 cursor-pointer no-underline;
   }
-  .btn-secondary:hover {
-    @apply bg-brand-blue text-white -translate-y-px;
+  .btn-outline-blue:hover {
+    @apply bg-tbf-blue text-white shadow-blue-glow -translate-y-px;
   }
 
-  .btn-white {
+  .btn-ghost {
     @apply inline-flex items-center justify-center gap-2
-           bg-white text-brand-blue font-bold uppercase
-           tracking-btn text-[14px] px-8 py-[14px]
-           rounded-btn min-h-[48px] border-2 border-white
-           transition-all duration-200 cursor-pointer no-underline;
+           bg-transparent text-tbf-silver font-semibold uppercase
+           tracking-[0.12em] text-sm px-8 py-4
+           border border-tbf-dark
+           transition-all duration-300 cursor-pointer no-underline;
   }
-  .btn-white:hover {
-    @apply bg-brand-surface -translate-y-px shadow-cta;
-  }
-
-  .btn-outline-white {
-    @apply inline-flex items-center justify-center gap-2
-           bg-transparent text-white font-bold uppercase
-           tracking-btn text-[14px] px-8 py-[14px]
-           rounded-btn min-h-[48px] border-2 border-white
-           transition-all duration-200 cursor-pointer no-underline;
-  }
-  .btn-outline-white:hover {
-    @apply bg-white text-brand-blue -translate-y-px;
+  .btn-ghost:hover {
+    @apply border-tbf-silver text-white -translate-y-px;
   }
 
-  /* ── Cards ────────────────────────────────────────────────── */
-  .card {
-    @apply bg-white rounded-card shadow-card p-7;
-  }
-  .card-hover {
-    @apply card transition-all duration-200;
-  }
-  .card-hover:hover {
-    @apply shadow-card-hover -translate-y-1;
+  /* ── Section label ────────────────────────── */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.22em] text-tbf-blue;
   }
 
-  /* ── Section label ────────────────────────────────────────── */
-  .section-label {
-    @apply text-[12px] font-semibold uppercase tracking-label text-brand-silver;
+  /* ── Divider ──────────────────────────────── */
+  .divider-blue {
+    @apply w-12 h-px bg-tbf-blue;
   }
 
-  /* ── Flow connector arrow ─────────────────────────────────── */
-  .flow-arrow {
-    @apply text-brand-silver text-2xl flex-shrink-0 mt-[-28px] hidden md:flex items-center;
+  /* ── Nav link ─────────────────────────────── */
+  .nav-link {
+    @apply text-tbf-silver-dim uppercase tracking-[0.14em] text-xs font-semibold
+           transition-colors duration-200 cursor-pointer;
   }
-
-  /* ── Step number circle ───────────────────────────────────── */
-  .step-circle {
-    @apply w-14 h-14 rounded-full bg-brand-blue text-white flex items-center justify-center
-           text-xl font-bold flex-shrink-0;
-  }
-
-  /* ── Icon box ─────────────────────────────────────────────── */
-  .icon-box {
-    @apply w-14 h-14 rounded-xl bg-brand-blue/10 flex items-center justify-center
-           text-brand-blue text-2xl flex-shrink-0;
+  .nav-link:hover,
+  .nav-link.active {
+    @apply text-white;
   }
 }
 
 @layer utilities {
-  .text-balance { text-wrap: balance; }
-
-  /* fade-in-up animation */
+  /* ── Animations ───────────────────────────── */
   @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(24px); }
+    from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .animate-fade-in-up {
-    animation: fadeInUp 0.55s ease both;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
-  .animation-delay-100 { animation-delay: 0.1s; }
-  .animation-delay-200 { animation-delay: 0.2s; }
-  .animation-delay-300 { animation-delay: 0.3s; }
-  .animation-delay-400 { animation-delay: 0.4s; }
+  @keyframes lineGrow {
+    from { width: 0; }
+    to   { width: 3rem; }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 24px rgba(30,144,255,0.3); }
+    50%       { box-shadow: 0 0 48px rgba(30,144,255,0.55); }
+  }
+  @keyframes heroDrift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(-6px, -10px, 0) scale(1.015); }
+  }
+
+  .animate-fade-in-up  { animation: fadeInUp 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+  .animate-fade-in     { animation: fadeIn 0.65s ease both; }
+  .animate-pulse-glow  { animation: pulseGlow 3s ease-in-out infinite; }
+  .animate-hero-drift  { animation: heroDrift 18s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-hero-drift { animation: none; }
+  }
+
+  .delay-100 { animation-delay: 0.1s; }
+  .delay-200 { animation-delay: 0.2s; }
+  .delay-300 { animation-delay: 0.3s; }
+  .delay-400 { animation-delay: 0.4s; }
+  .delay-500 { animation-delay: 0.5s; }
+  .delay-600 { animation-delay: 0.6s; }
+
+  /* ── Cinematic overlay ────────────────────── */
+  .hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(10,10,10,0.55) 0%,
+      rgba(10,10,10,0.3) 40%,
+      rgba(10,10,10,0.75) 80%,
+      rgba(10,10,10,1) 100%
+    );
+  }
+
+  /* ── Blue noise grain overlay ─────────────── */
+  .grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    z-index: 1;
+  }
+
+  /* ── Blue accent line ─────────────────────── */
+  .blue-line {
+    @apply block w-12 h-px bg-tbf-blue mt-4 mb-6;
+  }
+
+  /* ── Horizontal rule ──────────────────────── */
+  .hr-dark {
+    @apply border-0 border-t border-tbf-dark;
+  }
 }
