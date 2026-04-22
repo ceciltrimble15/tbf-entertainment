@@ -57,12 +57,12 @@ function Reveal({ children, className = '', delay = 0 }) {
    align:   'left' | 'center'
 ───────────────────────────────────────────────────────── */
 const LOGO_HEIGHTS = {
-  nav:       '54px',   // +50% — full brand marker, not an icon
-  xs:        '96px',   // +71% — section logos read as presence
-  sm:        '128px',  // +60%
-  md:        '160px',  // +45%
-  lg:        '200px',
-  watermark: 'clamp(260px, 52vw, 610px)', // +15% hero presence
+  nav:       '64px',   // nav bar — dominant brand marker
+  xs:        '120px',  // section dividers — clear presence
+  sm:        '160px',  // publishing anchor
+  md:        '200px',  // footer / CTA
+  lg:        '260px',  // larger feature placements
+  watermark: 'clamp(320px, 60vw, 720px)', // hero bg — full dominance
 };
 
 const LOGO_GLOWS = {
@@ -971,6 +971,205 @@ function PublishingPage({ setPage }) {
               </div>
             </Reveal>
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          KDP LAUNCH CAMPAIGN — Young G's vs. O.G.'s
+      ═══════════════════════════════════════════════════ */}
+      <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.022) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
+
+          <Reveal>
+            <div className="mb-16">
+              <p className="eyebrow mb-4">Active 30-Day Launch</p>
+              <h2 className="font-display font-black uppercase text-white leading-none" style={{ fontSize: 'clamp(2.2rem, 4.5vw, 4rem)' }}>
+                The Campaign<br /><span style={{ color: '#1E90FF' }}>Is Live.</span>
+              </h2>
+              <div className="blue-line" />
+              <p className="font-body text-tbf-silver leading-relaxed max-w-2xl" style={{ fontSize: '1rem' }}>
+                Young G's vs. O.G.'s — The Prefix is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
+              </p>
+            </div>
+          </Reveal>
+
+          {/* Buy now block */}
+          <Reveal delay={100}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-20 items-center p-8 lg:p-12" style={{ background: 'rgba(30,144,255,0.06)', border: '1px solid rgba(30,144,255,0.3)' }}>
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
+                  <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Available Now — Print &amp; eBook</span>
+                </div>
+                <h3 className="font-display font-black uppercase text-white leading-none mb-4" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.8rem)' }}>
+                  Young G's vs. O.G.'s<br /><span style={{ color: '#C0C0C0' }}>— The Prefix</span>
+                </h3>
+                <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
+                  Book One of the series. Nine chapters. A war in Cincinnati. A young crew with nothing to lose against four OG legends with forty years of patience behind them.
+                </p>
+                <div className="p-5 mb-6" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
+                  <p className="font-body text-tbf-silver italic" style={{ fontSize: '0.9rem' }}>
+                    "My name is Tay. Not Timmy."
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {[
+                    { label: 'Author',    value: 'O.G. Tom Tom' },
+                    { label: 'Publisher', value: 'TBF Entertainment' },
+                    { label: 'Format',    value: 'Print + eBook + Kindle' },
+                    { label: 'Genre',     value: 'Urban Fiction / Street Lit' },
+                    { label: 'Setting',   value: 'Cincinnati, Ohio' },
+                    { label: 'Series',    value: 'Book One of Series' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex flex-col gap-1">
+                      <span className="eyebrow" style={{ fontSize: '0.58rem' }}>{item.label}</span>
+                      <span className="font-body text-white text-sm">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <a
+                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+TBF+Entertainment"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-blue text-center"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <span>Buy on Amazon KDP</span>
+                    <span style={{ fontSize: '0.85em' }}>↗</span>
+                  </a>
+                  <button onClick={() => go('connect')} className="btn-outline-blue">Request ARC Copy</button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-5">
+                <div className="font-body text-tbf-silver-dim text-sm italic leading-loose" style={{ borderLeft: '2px solid rgba(30,144,255,0.3)', paddingLeft: '20px' }}>
+                  <p className="mb-4">"When Tay pulls the trigger on the Big Fella — in broad daylight, in front of everybody, over a name — he starts a war that the whole city will feel."</p>
+                  <p>"What nobody counted on was the funeral. The gold AK-47 pendants. The twenty-five million in clear duffel bags set in front of the casket."</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { label: 'Paperback', price: '$14.99 – $16.99', platform: 'Amazon KDP + IngramSpark' },
+                    { label: 'eBook',     price: '$4.99 – $6.99',   platform: 'Kindle + Draft2Digital' },
+                    { label: 'Indie',     price: 'Consignment',      platform: 'Cincinnati Black Bookstores' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between px-5 py-4" style={{ background: '#111111', border: '1px solid #1A1A1A' }}>
+                      <div>
+                        <div className="font-display font-bold uppercase text-white tracking-wide text-xs">{item.label}</div>
+                        <div className="font-body text-tbf-silver-dim" style={{ fontSize: '0.72rem' }}>{item.platform}</div>
+                      </div>
+                      <div className="font-body text-tbf-blue font-semibold text-sm">{item.price}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Campaign phases */}
+          <Reveal delay={150}>
+            <div className="mb-6">
+              <p className="eyebrow mb-3">Launch Architecture</p>
+              <h3 className="font-display font-black uppercase text-white" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)' }}>
+                30-Day Campaign — Four Phases
+              </h3>
+              <div className="blue-line" />
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-20">
+            {[
+              { phase: '01', label: 'Build', days: 'Days 1–7',  color: '#1E90FF', desc: 'Platform setup. KDP live. Cover finalized. ARC readers recruited. Social accounts armed. Infrastructure locked before anything goes public.' },
+              { phase: '02', label: 'Ignite', days: 'Days 8–14', color: '#1E90FF', desc: 'Cover drops on all platforms. Pre-orders open. Excerpt campaign begins. Influencer activation. Goodreads giveaway live.' },
+              { phase: '03', label: 'Strike', days: 'Days 15–21', color: '#1E90FF', desc: 'Launch day. Every platform fires at once. ARC reviews post. Author goes live. Local Cincinnati placements. Total saturation.' },
+              { phase: '04', label: 'Hold',  days: 'Days 22–30', color: '#C0C0C0', desc: 'Reader spotlight content. Book 2 tease drops. Analytics reviewed. Month 2 strategy built from data. Momentum sustained.' },
+            ].map((item, i) => (
+              <Reveal key={item.phase} delay={i * 100}>
+                <div className="p-7 h-full flex flex-col" style={{ background: '#111111', border: `1px solid ${i < 3 ? 'rgba(30,144,255,0.25)' : '#2B2B2B'}` }}>
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="font-display font-black uppercase text-tbf-blue" style={{ fontSize: '0.65rem', letterSpacing: '0.2em' }}>Phase {item.phase}</span>
+                    <span className="font-body text-tbf-silver-dim uppercase tracking-wider px-2 py-1" style={{ fontSize: '0.55rem', border: '1px solid #2B2B2B' }}>{item.days}</span>
+                  </div>
+                  <h4 className="font-display font-black uppercase text-white tracking-wide mb-3" style={{ fontSize: '1.4rem', color: item.color }}>{item.label}</h4>
+                  <p className="font-body text-tbf-silver-dim leading-relaxed flex-1" style={{ fontSize: '0.78rem' }}>{item.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* Platform targets */}
+          <Reveal delay={100}>
+            <div className="mb-6">
+              <p className="eyebrow mb-3">Day 30 Targets</p>
+              <h3 className="font-display font-black uppercase text-white" style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)' }}>
+                The Numbers We're Chasing
+              </h3>
+              <div className="blue-line" />
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-20">
+            {[
+              { metric: '300+',  label: 'Units Sold' },
+              { metric: '50+',   label: 'Amazon Reviews' },
+              { metric: '1K+',   label: 'New Followers' },
+              { metric: '300+',  label: 'Email Subscribers' },
+              { metric: '5+',    label: 'Retail Locations' },
+              { metric: '30+',   label: 'Goodreads Ratings' },
+            ].map((item, i) => (
+              <Reveal key={item.label} delay={i * 60}>
+                <div className="p-6 flex flex-col items-center text-center" style={{ background: '#111111', border: '1px solid rgba(30,144,255,0.15)' }}>
+                  <div className="font-display font-black text-tbf-blue mb-2" style={{ fontSize: '2rem' }}>{item.metric}</div>
+                  <div className="font-body text-tbf-silver-dim uppercase tracking-[0.15em]" style={{ fontSize: '0.6rem' }}>{item.label}</div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* Channel breakdown */}
+          <Reveal delay={120}>
+            <div className="mb-6">
+              <p className="eyebrow mb-3">Distribution Channels</p>
+              <h3 className="font-display font-black uppercase text-white" style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)' }}>
+                Multi-Platform. All At Once.
+              </h3>
+              <div className="blue-line" />
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
+            {[
+              { platform: 'Amazon KDP', focus: 'Print (Paperback)', detail: 'Primary retail channel. Optimized listing with keywords: urban fiction, street lit, Cincinnati, gang fiction, Black fiction.', status: 'Live' },
+              { platform: 'Kindle',     focus: 'eBook',             detail: 'MOBI/ePub format. Kindle Unlimited enrollment decision by Day 5. Suggested price: $4.99–$6.99.', status: 'Live' },
+              { platform: 'IngramSpark', focus: 'Expanded Print',    detail: 'Barnes & Noble + independent bookstore access. Wholesale enabled for consignment outreach.', status: 'Active' },
+              { platform: 'Draft2Digital', focus: 'eBook Distribution', detail: 'Expanded eBook reach beyond Amazon. Supplementary channel for non-Kindle readers.', status: 'Active' },
+              { platform: 'TikTok / BookTok', focus: 'Viral Discovery', detail: 'Primary social channel. Dramatic readings, character intros, comparable title content. Daily during launch week.', status: 'Running' },
+              { platform: 'Black Bookstores', focus: 'Cincinnati + Region', detail: 'Avondale, Bond Hill, Madisonville consignment. Physical copy delivery Week 2. Pop-up signing events.', status: 'Outreach' },
+            ].map((item, i) => (
+              <Reveal key={item.platform} delay={i * 80}>
+                <div className="flex items-start gap-5 p-6" style={{ background: '#111111', border: '1px solid #1A1A1A' }}>
+                  <div className="flex-shrink-0">
+                    <div className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue px-2 py-1" style={{ fontSize: '0.55rem', border: '1px solid rgba(30,144,255,0.3)', background: 'rgba(30,144,255,0.07)', whiteSpace: 'nowrap' }}>
+                      {item.status}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold uppercase text-white tracking-wide text-sm mb-1">{item.platform}</h4>
+                    <div className="font-body text-tbf-blue text-xs mb-2 uppercase tracking-wider">{item.focus}</div>
+                    <p className="font-body text-tbf-silver-dim leading-relaxed" style={{ fontSize: '0.78rem' }}>{item.detail}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* Book 2 tease */}
+          <Reveal delay={100}>
+            <div className="p-8 lg:p-10 text-center" style={{ background: 'rgba(30,144,255,0.04)', border: '1px solid rgba(30,144,255,0.2)' }}>
+              <p className="eyebrow mb-4">Book 2 — Coming</p>
+              <p className="font-body text-tbf-silver italic leading-relaxed mb-0" style={{ fontSize: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+                "OG Sean Smith got on a plane to Jamaica. He was happy. He was already on his next play."
+              </p>
+            </div>
+          </Reveal>
+
         </div>
       </section>
 
