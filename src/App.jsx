@@ -314,7 +314,7 @@ function BookCover({ size = 'lg' }) {
     >
       <img
         src="/book-cover.png"
-        alt="Young Gs vs Old Gs — TBF Entertainment"
+        alt="Young Gs vs Old Gs: The Takeover — TBF Entertainment"
         draggable={false}
         style={{
           width: '100%',
@@ -586,7 +586,71 @@ function HomePage({ setPage }) {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          3. THREE PILLARS
+          3. FLAGSHIP RELEASE — Featured on homepage.
+          Cover + hook + buy button + learn more.
+          This is not the full pitch. That lives on /publishing.
+          Rule: show it exists, show it's live, give the exit.
+      ═══════════════════════════════════════════════════ */}
+      <section className="py-20 lg:py-28 relative overflow-hidden" style={{ background: '#060606' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.018) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <p className="eyebrow mb-10">Now Live — Flagship Release</p>
+          </Reveal>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+            {/* Cover */}
+            <Reveal delay={80}>
+              <div className="flex justify-start">
+                <div className="relative">
+                  <div className="absolute -inset-10 pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(30,144,255,0.14) 0%, transparent 70%)' }} />
+                  <BookCover size="lg" />
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Copy — tight, 3-part: title, hook, actions */}
+            <Reveal delay={160}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse flex-shrink-0" />
+                <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.62rem' }}>Available Now — Print &amp; eBook</span>
+              </div>
+
+              <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.4rem, 4.5vw, 4rem)' }}>
+                Young G's<br />vs. O.G.'s
+              </h2>
+              <p className="font-body uppercase tracking-[0.14em] mb-6" style={{ fontSize: '0.72rem', color: '#C0C0C0' }}>
+                The Takeover — Book One
+              </p>
+
+              <div className="blue-line" />
+
+              <p className="font-body text-tbf-silver leading-relaxed mb-8" style={{ fontSize: '1rem', maxWidth: '440px' }}>
+                A war in Cincinnati. A young crew with nothing to lose. Four OG legends with forty years behind them. The debut release from TBF Entertainment Publishing.
+              </p>
+
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-blue"
+                  style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  Buy on Amazon <span style={{ fontSize: '0.85em' }}>↗</span>
+                </a>
+                <button onClick={() => go('publishing')} className="btn-outline-blue">
+                  Full Details →
+                </button>
+              </div>
+            </Reveal>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          4. THREE PILLARS
           Section logo divider above headline.
           Faint logo pattern texture at 5–8% opacity.
       ═══════════════════════════════════════════════════ */}
@@ -709,9 +773,10 @@ function HomePage({ setPage }) {
               <div className="inline-block px-3 py-1.5 mb-4" style={{ background: 'rgba(30,144,255,0.12)', border: '1px solid rgba(30,144,255,0.4)' }}>
                 <span className="font-body font-bold uppercase tracking-[0.2em] text-tbf-blue" style={{ fontSize: '0.6rem' }}>Debut Release</span>
               </div>
-              <h3 className="font-display font-black uppercase text-white leading-none mb-4" style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)' }}>
+              <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)' }}>
                 Young Gs<br />vs. Old Gs
               </h3>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>The Takeover — Book One</p>
               <div className="w-10 h-px mb-5" style={{ background: '#1E90FF' }} />
               <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                 The debut release under TBF Entertainment Publishing. A story rooted in real culture, generational tension, and authentic street narratives — told with discipline and intent.
@@ -941,15 +1006,16 @@ function PublishingPage({ setPage }) {
             </Reveal>
 
             <Reveal delay={200}>
-              <h2 className="font-display font-black uppercase text-white leading-none mb-4" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
+              <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
                 Young Gs<br />vs. Old Gs
               </h2>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>The Takeover — Book One</p>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed mb-5" style={{ fontSize: '1rem' }}>
                 The debut release from TBF Entertainment Publishing. A story rooted in generational tension, street culture, and authentic voice — told without compromise and built to last in the catalog.
               </p>
               <p className="font-body text-tbf-silver-dim leading-relaxed mb-8" style={{ fontSize: '0.9rem' }}>
-                Young Gs vs. Old Gs sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
+                Young Gs vs. Old Gs: The Takeover sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
               </p>
               <div className="p-6 mb-8" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
                 <p className="font-body text-tbf-silver italic leading-relaxed" style={{ fontSize: '0.95rem' }}>
@@ -975,7 +1041,7 @@ function PublishingPage({ setPage }) {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          KDP LAUNCH CAMPAIGN — Young G's vs. O.G.'s
+          KDP LAUNCH CAMPAIGN — Young Gs vs. Old Gs: The Takeover
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.022) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
@@ -989,7 +1055,7 @@ function PublishingPage({ setPage }) {
               </h2>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed max-w-2xl" style={{ fontSize: '1rem' }}>
-                Young G's vs. O.G.'s — The Prefix is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
+                Young G's vs. Old Gs: The Takeover is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
               </p>
             </div>
           </Reveal>
@@ -1002,9 +1068,10 @@ function PublishingPage({ setPage }) {
                   <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
                   <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Available Now — Print &amp; eBook</span>
                 </div>
-                <h3 className="font-display font-black uppercase text-white leading-none mb-4" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.8rem)' }}>
-                  Young G's vs. O.G.'s<br /><span style={{ color: '#C0C0C0' }}>— The Prefix</span>
+                <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.8rem)' }}>
+                  Young Gs vs. Old Gs
                 </h3>
+                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>The Takeover — Book One</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                   Book One of the series. Nine chapters. A war in Cincinnati. A young crew with nothing to lose against four OG legends with forty years of patience behind them.
                 </p>
@@ -1030,7 +1097,7 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+TBF+Entertainment"
+                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-blue text-center"
