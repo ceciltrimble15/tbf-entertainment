@@ -124,7 +124,7 @@ function Nav({ page, setPage }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const links = ['Home', 'Publishing', 'Artistry', 'Media', 'Connect'];
+  const links = ['Home', 'Books', 'Publishing', 'Artistry', 'Media', 'Connect'];
 
   const go = (p) => {
     setPage(p.toLowerCase());
@@ -253,7 +253,7 @@ function Footer({ setPage }) {
           <div>
             <p className="eyebrow mb-5">Navigate</p>
             <div className="flex flex-col gap-3">
-              {['Home', 'Publishing', 'Artistry', 'Media', 'Connect'].map((l) => (
+              {['Home', 'Books', 'Publishing', 'Artistry', 'Media', 'Connect'].map((l) => (
                 <button
                   key={l}
                   onClick={() => go(l.toLowerCase())}
@@ -639,7 +639,7 @@ function HomePage({ setPage }) {
                 >
                   Buy on Amazon <span style={{ fontSize: '0.85em' }}>↗</span>
                 </a>
-                <button onClick={() => go('publishing')} className="btn-outline-blue">
+                <button onClick={() => go('youngGs')} className="btn-outline-blue">
                   Full Details →
                 </button>
               </div>
@@ -1106,6 +1106,7 @@ function PublishingPage({ setPage }) {
                     <span>Buy on Amazon KDP</span>
                     <span style={{ fontSize: '0.85em' }}>↗</span>
                   </a>
+                  <button onClick={() => go('youngGs')} className="btn-outline-blue">View Book Page →</button>
                   <button onClick={() => go('connect')} className="btn-outline-blue">Request ARC Copy</button>
                 </div>
               </div>
@@ -1273,6 +1274,299 @@ function PublishingPage({ setPage }) {
                 Additional titles are in development. The TBF Publishing catalog is being built with intention — one release at a time.
               </p>
               <button onClick={() => go('connect')} className="btn-outline-blue text-xs">Submit a Publishing Inquiry</button>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   YOUNG GS VS OLD GS — BOOK DETAIL PAGE
+   Cinematic landing page: blue / red / gold palette.
+   Lives at route 'youngGs'. Linked from:
+     - HomePage flagship section ("Full Details →")
+     - PublishingPage catalog card ("Read More →")
+     - BooksPage catalog card
+   Does NOT replace Publishing page. Publishing = catalog.
+   This page = single-book deep dive + buy CTA.
+───────────────────────────────────────────────────────── */
+function YoungGsPage({ setPage }) {
+  const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  const bookStyles = `
+    .yg-body { font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif; }
+    .yg-bebas { font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.04em; font-weight: 900; text-transform: uppercase; }
+    .yg-condense { font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif; }
+    .yg-gold { color: #C9920A; }
+    .yg-gold-light { color: #E8B84B; }
+    .yg-blue { color: #4A7FE8; }
+    .yg-red { color: #E84040; }
+    .yg-off-white { color: #B8B4AE; }
+    .yg-eyebrow {
+      font-family: 'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.26em;
+      text-transform: uppercase; color: #C9920A;
+      display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+    }
+    .yg-eyebrow::before { content:''; display:block; width:24px; height:1px; background:#C9920A; flex-shrink:0; }
+    .yg-title { font-family:'Georgia','Times New Roman',serif; font-weight:900; text-transform:uppercase; letter-spacing:0.03em; line-height:0.9; color:#F0EDE8; }
+    .yg-pull {
+      margin: 28px 0; padding: 20px 24px;
+      border-left: 3px solid #C9920A;
+      background: rgba(201,146,10,0.05);
+    }
+    .yg-pull p { font-family:'Georgia',serif; font-size:1.2rem; color:#F0EDE8; line-height:1.45; font-style:italic; }
+    .yg-pull span { display:block; margin-top:8px; font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif; font-size:0.62rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:#C9920A; }
+    .yg-btn-gold {
+      display:inline-flex; align-items:center; gap:8px;
+      font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase;
+      padding:13px 30px; background:#C9920A; color:#080808; border:none; cursor:pointer;
+      text-decoration:none; transition:background 0.2s;
+    }
+    .yg-btn-gold:hover { background:#E8B84B; }
+    .yg-btn-out {
+      display:inline-flex; align-items:center; gap:8px;
+      font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase;
+      padding:13px 30px; background:transparent; color:#F0EDE8;
+      border:1px solid rgba(240,237,232,0.3); cursor:pointer; transition:border-color 0.2s;
+    }
+    .yg-btn-out:hover { border-color:#F0EDE8; }
+    .yg-trait { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif; font-size:0.86rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#B8B4AE; }
+    .yg-trait::before { content:'—'; opacity:0.3; flex-shrink:0; }
+    .yg-trait:last-child { border-bottom:none; }
+    .yg-hook-block { padding:36px 40px; background:#141414; border-left:2px solid transparent; transition:border-color 0.25s; }
+    .yg-hook-block:hover { border-left-color:#C9920A; }
+    .yg-format-pill {
+      display:inline-block; padding:7px 16px;
+      font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      font-size:0.65rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;
+      color:#B8B4AE; border:1px solid rgba(255,255,255,0.14);
+    }
+  `;
+
+  return (
+    <>
+      <style>{bookStyles}</style>
+
+      {/* ── HERO ── */}
+      <section className="yg-body relative overflow-hidden" style={{ minHeight:'100vh', display:'flex', alignItems:'center', paddingTop:'80px', background:'#080808' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 60% 70% at 72% 50%, rgba(27,79,190,0.2) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 28% 60%, rgba(192,21,15,0.16) 0%, transparent 60%), radial-gradient(ellipse 80% 30% at 50% 100%, rgba(201,146,10,0.07) 0%, transparent 50%)' }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full">
+          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:'60px', alignItems:'center' }}>
+
+            {/* Left — copy */}
+            <div>
+              <Reveal>
+                <div className="yg-eyebrow">A TBF Entertainment Novel</div>
+                <div className="yg-title" style={{ fontSize:'clamp(4.5rem,9vw,8.5rem)' }}>
+                  Young Gs<br />
+                  <span style={{ fontSize:'0.36em', color:'#B8B4AE', letterSpacing:'0.3em' }}>VS</span><br />
+                  <span style={{ color:'#C9920A' }}>Old Gs</span>
+                </div>
+                <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.9rem', fontWeight:600, letterSpacing:'0.14em', textTransform:'uppercase', color:'#E84040', margin:'20px 0 28px' }}>
+                  Two Generations. One City. The War Was Never Supposed to Be Personal.
+                </p>
+                <p style={{ fontSize:'1rem', color:'#B8B4AE', lineHeight:1.75, maxWidth:'460px', marginBottom:'36px' }}>
+                  Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
+                </p>
+                <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
+                  <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
+                  <button onClick={() => go('connect')} className="yg-btn-out">Request ARC Copy</button>
+                </div>
+              </Reveal>
+            </div>
+
+            {/* Right — cover */}
+            <Reveal delay={180}>
+              <div className="relative flex-shrink-0" style={{ width:'320px' }}>
+                <div className="absolute pointer-events-none" style={{ top:'-30px', right:'-30px', width:'70%', height:'70%', background:'radial-gradient(ellipse, rgba(27,79,190,0.28) 0%, transparent 70%)' }} />
+                <div className="absolute pointer-events-none" style={{ bottom:'-20px', left:'-20px', width:'60%', height:'60%', background:'radial-gradient(ellipse, rgba(192,21,15,0.22) 0%, transparent 70%)' }} />
+                <img
+                  src="/book-cover.png"
+                  alt="Young Gs vs Old Gs — O.G. Tom Tom"
+                  style={{ width:'100%', aspectRatio:'2/3', objectFit:'cover', objectPosition:'right center', display:'block', boxShadow:'-16px 16px 60px rgba(192,21,15,0.28), 16px 16px 60px rgba(27,79,190,0.28), 0 32px 100px rgba(0,0,0,0.9)', border:'1px solid rgba(201,146,10,0.15)' }}
+                />
+                <div style={{ position:'absolute', bottom:'-14px', left:0, fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.58rem', fontWeight:600, letterSpacing:'0.24em', textTransform:'uppercase', color:'#C9920A', background:'#0E0E0E', padding:'5px 12px', border:'1px solid rgba(201,146,10,0.3)' }}>
+                  Now Available — Print &amp; eBook
+                </div>
+              </div>
+            </Reveal>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── TAGLINE HOOK ── */}
+      <section className="yg-body" style={{ padding:'80px 0', background:'#0E0E0E', position:'relative', overflow:'hidden' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(201,146,10,0.04) 0%, transparent 60%)' }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <div className="yg-title" style={{ fontSize:'clamp(2.6rem,4.8vw,5rem)', marginBottom:'12px' }}>
+              The Streets Don't Forget.<br />
+              <span style={{ color:'#E84040' }}>They Only Pass It Down.</span>
+            </div>
+            <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.65rem', fontWeight:600, letterSpacing:'0.22em', textTransform:'uppercase', color:'#C9920A', marginBottom:'52px' }}>— O.G. Tom Tom</p>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px' }}>
+            {[
+              { n:'01', title:'Young Gs', body:'Came up with nothing and built something. Fast, fearless, organized — running the streets with precision no one gave them credit for. They didn\'t inherit anything. They took it.' },
+              { n:'02', title:'Old Gs', body:'Built an empire and refuse to let go. Forty years of money, power, and patience. They\'ve survived everything the streets threw at them. They weren\'t ready for what came next.' },
+              { n:'03', title:'The War', body:'When respect turns to envy and loyalty turns to betrayal, the city becomes a battlefield. Two codes. Two generations. One outcome — and everybody loses something.' },
+              { n:'04', title:'Choose a Side', body:'There is no neutral ground in this city. Every move has a consequence. Every alliance has a cost. The question is not who wins. The question is what\'s left standing.' },
+            ].map((item, i) => (
+              <Reveal key={item.n} delay={i * 90}>
+                <div className="yg-hook-block">
+                  <div style={{ fontFamily:"'Georgia',serif", fontSize:'3.5rem', color:'rgba(255,255,255,0.04)', lineHeight:1, marginBottom:'-8px', fontWeight:900 }}>{item.n}</div>
+                  <h3 style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'1.2rem', fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#F0EDE8', marginBottom:'10px' }}>{item.title}</h3>
+                  <p style={{ fontSize:'0.9rem', color:'#B8B4AE', lineHeight:1.75 }}>{item.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SYNOPSIS + SPREAD ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#080808' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'80px', alignItems:'center' }}>
+          <div>
+            <Reveal>
+              <div className="yg-eyebrow">The Story</div>
+              <div className="yg-title" style={{ fontSize:'clamp(2.2rem,3.5vw,3.5rem)', marginBottom:'28px' }}>
+                Set in Cincinnati.<br />Told on Its Own Terms.
+              </div>
+            </Reveal>
+            <Reveal delay={100}>
+              <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'18px' }}>
+                Young Gs came up with nothing and built something. Old Gs built an empire and refuse to let go.
+              </p>
+              <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'18px' }}>
+                When respect turns to envy and loyalty turns to betrayal, the city becomes a battlefield. Two generations. Two codes. One war that will change everything.
+              </p>
+              <div className="yg-pull">
+                <p>"This isn't just fiction. It's perspective."</p>
+                <span>— O.G. Tom Tom</span>
+              </div>
+              <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'28px' }}>
+                Cincinnati, Ohio — a city that rarely gets its story told on its own terms. Until now.
+              </p>
+              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
+            </Reveal>
+          </div>
+          <Reveal delay={120}>
+            <div>
+              <img
+                src="/book-cover.png"
+                alt="Full cover spread — Young Gs vs Old Gs"
+                style={{ width:'100%', display:'block', objectFit:'cover', objectPosition:'left center', maxHeight:'440px', boxShadow:'0 20px 80px rgba(0,0,0,0.8)', border:'1px solid rgba(255,255,255,0.05)' }}
+              />
+              <p style={{ marginTop:'12px', fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.6rem', fontWeight:600, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.25)', textAlign:'center' }}>
+                Print Edition — O.G. Tom Tom
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── CHOOSE A SIDE ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#0E0E0E', position:'relative', overflow:'hidden' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 40% 80% at 0% 50%, rgba(27,79,190,0.09) 0%, transparent 60%), radial-gradient(ellipse 40% 80% at 100% 50%, rgba(201,146,10,0.09) 0%, transparent 60%)' }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:'50px' }}>
+              <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Two Generations. One City.</div>
+              <div className="yg-title" style={{ fontSize:'clamp(2.4rem,4vw,4rem)' }}>
+                Choose a Side.<br /><span style={{ color:'#C9920A' }}>Live With the Consequences.</span>
+              </div>
+            </div>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 70px 1fr', gap:0, alignItems:'stretch' }}>
+            <Reveal delay={80}>
+              <div style={{ padding:'44px 40px', background:'rgba(27,79,190,0.07)', border:'1px solid rgba(27,79,190,0.2)' }}>
+                <div style={{ fontFamily:"'Georgia',serif", fontSize:'2rem', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.06em', color:'#4A7FE8', marginBottom:'18px' }}>Young Gs</div>
+                <div>
+                  {['Built from nothing','Fast and fearless','Organized precision','No patience for old rules','They came to take it all'].map(t => (
+                    <div key={t} className="yg-trait">{t}</div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Georgia',serif", fontSize:'1.6rem', fontWeight:900, color:'rgba(255,255,255,0.12)', letterSpacing:'0.1em' }}>VS</div>
+            <Reveal delay={160}>
+              <div style={{ padding:'44px 40px', background:'rgba(201,146,10,0.07)', border:'1px solid rgba(201,146,10,0.2)' }}>
+                <div style={{ fontFamily:"'Georgia',serif", fontSize:'2rem', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.06em', color:'#C9920A', marginBottom:'18px' }}>Old Gs</div>
+                <div>
+                  {['Forty years in the game','Money, power, patience','They built the empire','They won\'t let go','They\'ve survived everything'].map(t => (
+                    <div key={t} className="yg-trait">{t}</div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AUTHOR ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#080808' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10" style={{ display:'grid', gridTemplateColumns:'260px 1fr', gap:'70px', alignItems:'start' }}>
+          <Reveal>
+            <div style={{ position:'relative' }}>
+              <div style={{ width:'100%', aspectRatio:'3/4', background:'#141414', border:'1px solid rgba(255,255,255,0.07)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                <span style={{ fontFamily:"'Georgia',serif", fontSize:'0.9rem', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.1)' }}>O.G.<br />Tom Tom</span>
+              </div>
+              <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'#C9920A', padding:'9px 14px', fontFamily:"'Georgia',serif", fontSize:'1rem', letterSpacing:'0.1em', fontWeight:900, textTransform:'uppercase', color:'#080808' }}>O.G. Tom Tom</div>
+            </div>
+          </Reveal>
+          <div>
+            <Reveal>
+              <div className="yg-eyebrow">About the Author</div>
+              <div className="yg-title" style={{ fontSize:'clamp(2.2rem,3.5vw,3.5rem)', marginBottom:'22px' }}>O.G. Tom Tom</div>
+            </Reveal>
+            <Reveal delay={100}>
+              <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'16px' }}>
+                O.G. Tom Tom writes from a real perspective — rooted in lived experience, pressure, and the consequences that come with it.
+              </p>
+              <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'16px' }}>
+                His stories don't just entertain — they expose the code, the mindset, and the reality behind life in the streets. <strong style={{ color:'#F0EDE8', fontWeight:500 }}>This isn't just fiction. It's perspective.</strong>
+              </p>
+              <div className="yg-pull" style={{ borderLeftColor:'#4A7FE8', background:'rgba(27,79,190,0.05)' }}>
+                <p>"Two generations. Two codes. One war that will change everything."</p>
+                <span style={{ color:'#4A7FE8' }}>— Young Gs vs Old Gs</span>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BUY CTA ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#0E0E0E', position:'relative', overflow:'hidden', textAlign:'center' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(201,146,10,0.06) 0%, transparent 60%)' }} />
+        <div className="relative z-10 max-w-2xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Available Now</div>
+            <div className="yg-title" style={{ fontSize:'clamp(3rem,6vw,6rem)', marginBottom:'16px' }}>
+              Get the<br /><span style={{ color:'#C9920A' }}>Book.</span>
+            </div>
+            <p style={{ fontSize:'0.98rem', color:'#B8B4AE', marginBottom:'32px', lineHeight:1.7 }}>
+              Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />Available in print and eBook everywhere books are sold.
+            </p>
+            <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
+              {['Print — Paperback','eBook — Kindle','Amazon KDP','IngramSpark'].map(f => (
+                <span key={f} className="yg-format-pill">{f}</span>
+              ))}
+            </div>
+            <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
+              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
+              <button onClick={() => go('connect')} className="yg-btn-out" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Request ARC Copy</button>
+            </div>
+            <div style={{ marginTop:'40px', paddingTop:'28px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
+              <button onClick={() => go('publishing')} style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.65rem', fontWeight:600, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,0.3)', background:'none', border:'none', cursor:'pointer' }}>
+                ← Back to Publishing Catalog
+              </button>
             </div>
           </Reveal>
         </div>
@@ -1475,6 +1769,116 @@ function MediaPage({ setPage }) {
 }
 
 /* ─────────────────────────────────────────────────────────
+   BOOKS PAGE — Catalog index. All TBF titles.
+   Links to individual book pages (e.g. youngGs).
+───────────────────────────────────────────────────────── */
+function BooksPage({ setPage }) {
+  const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  return (
+    <>
+      <PageHero
+        eyebrow="TBF Entertainment — Book Catalog"
+        title="The Written"
+        titleAccent="Catalog."
+        subtitle="Every title published under the TBF Entertainment banner. Rooted in culture, built for longevity. Street-authentic narratives told without compromise."
+      />
+
+      {/* Catalog grid */}
+      <section className="py-20 lg:py-28" style={{ background: '#0A0A0A' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+
+          <Reveal>
+            <p className="eyebrow mb-4">Current Releases</p>
+            <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>Now Available</h2>
+            <div className="blue-line" />
+          </Reveal>
+
+          {/* Featured — Book 1 */}
+          <Reveal delay={100}>
+            <div
+              className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center p-8 lg:p-12 mb-6 cursor-pointer"
+              style={{ background: 'rgba(30,144,255,0.04)', border: '1px solid rgba(30,144,255,0.25)' }}
+              onClick={() => go('youngGs')}
+            >
+              <div className="flex justify-start">
+                <div className="relative">
+                  <div className="absolute -inset-8 pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(201,146,10,0.12) 0%, transparent 70%)' }} />
+                  <BookCover size="lg" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ background: '#C9920A' }} />
+                  <span className="font-body font-semibold uppercase tracking-[0.18em]" style={{ fontSize: '0.62rem', color: '#C9920A' }}>Flagship Release — Book One</span>
+                </div>
+                <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>
+                  Young Gs vs Old Gs
+                </h3>
+                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>The Takeover — O.G. Tom Tom</p>
+                <p className="font-body text-tbf-silver leading-relaxed mb-6" style={{ fontSize: '0.96rem', maxWidth: '420px' }}>
+                  A war in Cincinnati. Young Gs with nothing to lose. Four OG legends with forty years of patience. Two codes. One outcome.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button onClick={(e) => { e.stopPropagation(); go('youngGs'); }} className="btn-blue" style={{ background: '#C9920A', borderColor: '#C9920A', color: '#080808' }}>
+                    View Book Page →
+                  </button>
+                  <a
+                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom"
+                    target="_blank" rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="btn-outline-blue"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    Buy on Amazon ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Coming Soon slots */}
+          <Reveal delay={150}>
+            <div className="mt-16 mb-6">
+              <p className="eyebrow mb-4">In Development</p>
+              <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)' }}>Coming to the Catalog</h2>
+              <div className="blue-line" />
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              { title: 'Book Two', sub: 'Young Gs vs Old Gs — Untitled', status: 'In Development' },
+              { title: 'TBF Title 02', sub: 'Urban Fiction — Upcoming', status: 'Announced Soon' },
+              { title: 'TBF Title 03', sub: 'Street Lit — Upcoming', status: 'Announced Soon' },
+            ].map((item, i) => (
+              <Reveal key={item.title} delay={i * 80}>
+                <div className="p-8 flex flex-col" style={{ background: '#111111', border: '1px solid #1A1A1A', minHeight: '200px' }}>
+                  <div className="font-body font-semibold uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.58rem', color: '#2B2B2B' }}>{item.status}</div>
+                  <h4 className="font-display font-bold uppercase text-white tracking-wide mb-2" style={{ fontSize: '1.3rem' }}>{item.title}</h4>
+                  <p className="font-body text-tbf-silver-dim" style={{ fontSize: '0.78rem' }}>{item.sub}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* CTA to Publishing */}
+          <Reveal delay={100}>
+            <div className="mt-16 p-8 text-center" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A' }}>
+              <p className="eyebrow mb-3">Publishing Division</p>
+              <p className="font-body text-tbf-silver leading-relaxed mb-5" style={{ fontSize: '0.95rem' }}>
+                See the full 30-day launch campaign, distribution strategy, and publishing roadmap.
+              </p>
+              <button onClick={() => go('publishing')} className="btn-blue">View Publishing Division →</button>
+            </div>
+          </Reveal>
+
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    CONNECT PAGE
 ───────────────────────────────────────────────────────── */
 function ConnectPage() {
@@ -1553,11 +1957,13 @@ export default function App() {
 
   const renderPage = () => {
     switch (page) {
-      case 'publishing': return <PublishingPage setPage={setPage} />;
-      case 'artistry':   return <ArtistryPage   setPage={setPage} />;
-      case 'media':      return <MediaPage       setPage={setPage} />;
+      case 'youngGs':    return <YoungGsPage    setPage={setPage} />;
+      case 'books':      return <BooksPage       setPage={setPage} />;
+      case 'publishing': return <PublishingPage  setPage={setPage} />;
+      case 'artistry':   return <ArtistryPage    setPage={setPage} />;
+      case 'media':      return <MediaPage        setPage={setPage} />;
       case 'connect':    return <ConnectPage />;
-      default:           return <HomePage        setPage={setPage} />;
+      default:           return <HomePage         setPage={setPage} />;
     }
   };
 
