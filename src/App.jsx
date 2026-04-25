@@ -1515,9 +1515,11 @@ function YoungGsPage({ setPage }) {
         <div className="max-w-7xl mx-auto px-6 lg:px-10" style={{ display:'grid', gridTemplateColumns:'260px 1fr', gap:'70px', alignItems:'start' }}>
           <Reveal>
             <div style={{ position:'relative' }}>
-              <div style={{ width:'100%', aspectRatio:'3/4', background:'#141414', border:'1px solid rgba(255,255,255,0.07)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
-                <span style={{ fontFamily:"'Georgia',serif", fontSize:'0.9rem', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.1)' }}>O.G.<br />Tom Tom</span>
-              </div>
+              <img
+                src="/author-photo.png"
+                alt="O.G. Tom Tom — Author"
+                style={{ width:'100%', display:'block', objectFit:'cover', objectPosition:'top center', filter:'contrast(1.05)', boxShadow:'0 20px 60px rgba(0,0,0,0.8)', border:'1px solid rgba(201,146,10,0.2)' }}
+              />
               <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'#C9920A', padding:'9px 14px', fontFamily:"'Georgia',serif", fontSize:'1rem', letterSpacing:'0.1em', fontWeight:900, textTransform:'uppercase', color:'#080808' }}>O.G. Tom Tom</div>
             </div>
           </Reveal>
