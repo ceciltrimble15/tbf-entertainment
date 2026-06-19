@@ -1,6 +1,42 @@
 import { useState, useEffect, useRef } from 'react';
 
 /* ─────────────────────────────────────────────────────────
+   LEAD CAPTURE CONFIG
+
+   The email-capture and contact forms POST here. Set
+   FORM_ENDPOINT to a Formspree form URL (https://formspree.io
+   → create form → copy the "https://formspree.io/f/xxxxxxxx"
+   endpoint) to capture leads directly into your inbox /
+   Airtable. Until it is set, forms fall back to opening the
+   visitor's email client addressed to CONTACT_EMAIL so no
+   lead is ever silently lost.
+
+   One-line setup is documented in docs/LAUNCH_OPS.md.
+───────────────────────────────────────────────────────── */
+const FORM_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
+const CONTACT_EMAIL = 'info@tbfentertainment.art';
+
+async function submitLead(payload) {
+  if (FORM_ENDPOINT) {
+    const res = await fetch(FORM_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Submission failed');
+    return 'sent';
+  }
+  // No endpoint configured yet → don't lose the lead: open a pre-filled email.
+  const subject = `[TBF ${payload.type || 'Inquiry'}] ${payload.name || payload.email || ''}`.trim();
+  const body = Object.entries(payload)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('\n');
+  window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return 'mailto';
+}
+
+/* ─────────────────────────────────────────────────────────
    SCROLL-REVEAL HOOK
 ───────────────────────────────────────────────────────── */
 function useReveal(threshold = 0.12) {
@@ -394,6 +430,21 @@ function ConnectForm({ compact = false }) {
   const [type, setType]     = useState('General');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError]   = useState('');
+
+  const handleSubmit = async (payload) => {
+    setError('');
+    setSending(true);
+    try {
+      await submitLead(payload);
+      setSubmitted(true);
+    } catch {
+      setError('Something went wrong. Please email ' + CONTACT_EMAIL + ' directly.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const inputStyle = { border: '1px solid #2B2B2B', fontSize: '0.875rem', background: 'transparent' };
   const onFocus = (e) => { e.target.style.borderColor = 'rgba(30,144,255,0.5)'; };
@@ -411,22 +462,25 @@ function ConnectForm({ compact = false }) {
 
   if (compact) {
     return (
-      <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex flex-col sm:flex-row gap-0 max-w-lg mx-auto" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
-        <input
-          type="email" placeholder="Enter your email" value={email}
-          onChange={(e) => setEmail(e.target.value)} required
-          className="flex-1 font-body text-sm px-6 py-5 text-white placeholder-tbf-silver-dim outline-none transition-all duration-200 bg-transparent"
-          style={{ border: 'none', background: 'transparent' }}
-          onFocus={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.6)'; }}
-          onBlur={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.3)'; }}
-        />
-        <button type="submit" className="btn-blue whitespace-nowrap" style={{ borderRadius: 0, padding: '1.1rem 2rem', fontSize: '0.78rem' }}>Get Early Access</button>
-      </form>
+      <div className="max-w-lg mx-auto">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+          <input
+            type="email" placeholder="Enter your email" value={email}
+            onChange={(e) => setEmail(e.target.value)} required
+            className="flex-1 font-body text-sm px-6 py-5 text-white placeholder-tbf-silver-dim outline-none transition-all duration-200 bg-transparent"
+            style={{ border: 'none', background: 'transparent' }}
+            onFocus={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.6)'; }}
+            onBlur={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.3)'; }}
+          />
+          <button type="submit" disabled={sending} className="btn-blue whitespace-nowrap" style={{ borderRadius: 0, padding: '1.1rem 2rem', fontSize: '0.78rem', opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Get Early Access'}</button>
+        </form>
+        {error && <p className="font-body text-xs mt-3" style={{ color: '#E84040' }}>{error}</p>}
+      </div>
     );
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message }); }} className="flex flex-col gap-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="eyebrow block mb-2">Name</label>
@@ -459,7 +513,8 @@ function ConnectForm({ compact = false }) {
           className={`${baseInput} resize-none`} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
         />
       </div>
-      <button type="submit" className="btn-blue w-full md:w-auto">Submit Inquiry</button>
+      {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error}</p>}
+      <button type="submit" disabled={sending} className="btn-blue w-full md:w-auto" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Submit Inquiry'}</button>
     </form>
   );
 }
@@ -999,7 +1054,14 @@ function PublishingPage({ setPage }) {
                     <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
                     <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
                   </div>
-                  <button className="btn-blue w-full">Get the Book</button>
+                  <a
+                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    target="_blank" rel="noopener noreferrer"
+                    className="btn-blue w-full text-center"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    Get the Book ↗
+                  </a>
                   <button className="btn-outline-blue w-full" onClick={() => go('connect')}>Get First Access</button>
                 </div>
               </div>
