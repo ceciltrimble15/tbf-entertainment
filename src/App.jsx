@@ -2270,10 +2270,49 @@ function ConnectPage() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   APP ROOT
+   APP ROOT — URL-based routing (no router dependency)
+
+   Each page maps to a real path so deep links like
+   /young-gs load directly and are shareable. setPage keeps
+   its existing signature for every child; it now also syncs
+   the browser URL. SPA fallback to index.html is handled in
+   vercel.json so direct hits on /young-gs resolve.
 ───────────────────────────────────────────────────────── */
+const PATHS = {
+  home:       '/',
+  books:      '/books',
+  publishing: '/publishing',
+  artistry:   '/artistry',
+  media:      '/media',
+  connect:    '/connect',
+  youngGs:    '/young-gs',
+};
+
+const pageFromPath = (path) => {
+  const match = Object.keys(PATHS).find((key) => PATHS[key] === path);
+  return match || 'home';
+};
+
 export default function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPageState] = useState(() =>
+    typeof window === 'undefined' ? 'home' : pageFromPath(window.location.pathname)
+  );
+
+  // Drop-in replacement for the old setPage: updates state AND the URL.
+  const setPage = (p) => {
+    setPageState(p);
+    const path = PATHS[p] || '/';
+    if (typeof window !== 'undefined' && window.location.pathname !== path) {
+      window.history.pushState({ page: p }, '', path);
+    }
+  };
+
+  // Handle browser back/forward.
+  useEffect(() => {
+    const onPop = () => setPageState(pageFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
