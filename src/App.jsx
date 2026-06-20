@@ -16,23 +16,25 @@ import { useState, useEffect, useRef } from 'react';
 const FORM_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
 const CONTACT_EMAIL = 'info@tbfentertainment.art';
 
-async function submitLead(payload) {
+async function submitLead(payload, to = CONTACT_EMAIL) {
   if (FORM_ENDPOINT) {
     const res = await fetch(FORM_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(payload),
+      // _to lets a configured Formspree/route forward to the right inbox.
+      body: JSON.stringify({ ...payload, _to: to }),
     });
     if (!res.ok) throw new Error('Submission failed');
     return 'sent';
   }
-  // No endpoint configured yet → don't lose the lead: open a pre-filled email.
+  // No endpoint configured yet → don't lose the lead: open a pre-filled email
+  // addressed to the destination this form should route to.
   const subject = `[TBF ${payload.type || 'Inquiry'}] ${payload.name || payload.email || ''}`.trim();
   const body = Object.entries(payload)
     .filter(([, v]) => v)
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
-  window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   return 'mailto';
 }
 
@@ -1354,6 +1356,109 @@ function PublishingPage({ setPage }) {
    Does NOT replace Publishing page. Publishing = catalog.
    This page = single-book deep dive + buy CTA.
 ───────────────────────────────────────────────────────── */
+/* Email signup — "Join the Movement". Routes to info@tbfentertainment.art. */
+function YGMovementForm() {
+  const [email, setEmail] = useState('');
+  const [state, setState] = useState('idle'); // idle | sending | done | error
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setState('sending');
+    try {
+      await submitLead({ type: 'Movement', email, source: "Young Gs landing page" }, 'info@tbfentertainment.art');
+      setState('done');
+    } catch { setState('error'); }
+  };
+
+  if (state === 'done') {
+    return (
+      <div style={{ padding:'28px', border:'1px solid rgba(201,146,10,0.4)', background:'rgba(201,146,10,0.06)', textAlign:'center' }}>
+        <div className="yg-title" style={{ fontSize:'1.4rem', color:'#C9920A', marginBottom:'6px' }}>You're In.</div>
+        <p style={{ color:'#B8B4AE', fontSize:'0.92rem' }}>Watch your inbox — launch news, drops, and first access come straight from TBF.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} style={{ maxWidth:'520px', margin:'0 auto' }}>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          type="email" required placeholder="Enter your email" value={email}
+          onChange={(e) => setEmail(e.target.value)} className="yg-input" style={{ flex:1 }}
+        />
+        <button type="submit" disabled={state === 'sending'} className="yg-btn-gold" style={{ justifyContent:'center', padding:'14px 28px', opacity: state === 'sending' ? 0.6 : 1 }}>
+          {state === 'sending' ? 'Joining…' : 'Join the Movement'}
+        </button>
+      </div>
+      {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem', marginTop:'10px' }}>Something went wrong — email info@tbfentertainment.art directly.</p>}
+    </form>
+  );
+}
+
+/* Street Team signup. Routes to submissions@tbfentertainment.art. */
+function YGStreetTeamForm() {
+  const [form, setForm] = useState({ name:'', email:'', city:'', help:'Post on social / BookTok', message:'' });
+  const [state, setState] = useState('idle');
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setState('sending');
+    try {
+      await submitLead({ type: 'Street Team', ...form }, 'submissions@tbfentertainment.art');
+      setState('done');
+    } catch { setState('error'); }
+  };
+
+  if (state === 'done') {
+    return (
+      <div style={{ padding:'32px', border:'1px solid rgba(201,146,10,0.4)', background:'rgba(201,146,10,0.06)', textAlign:'center' }}>
+        <div className="yg-title" style={{ fontSize:'1.6rem', color:'#C9920A', marginBottom:'8px' }}>Welcome to the Team.</div>
+        <p style={{ color:'#B8B4AE', fontSize:'0.95rem' }}>We'll reach out with assets, copies, and the plan. Cincinnati doesn't forget — and neither will we.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:'18px' }}>
+      <div className="yg-grid-2col">
+        <div>
+          <label className="yg-label">Name</label>
+          <input required value={form.name} onChange={set('name')} className="yg-input" placeholder="Your name" />
+        </div>
+        <div>
+          <label className="yg-label">Email</label>
+          <input required type="email" value={form.email} onChange={set('email')} className="yg-input" placeholder="Your email" />
+        </div>
+      </div>
+      <div className="yg-grid-2col">
+        <div>
+          <label className="yg-label">City</label>
+          <input value={form.city} onChange={set('city')} className="yg-input" placeholder="e.g. Cincinnati, OH" />
+        </div>
+        <div>
+          <label className="yg-label">How You Want to Help</label>
+          <select value={form.help} onChange={set('help')} className="yg-input" style={{ appearance:'none' }}>
+            <option>Post on social / BookTok</option>
+            <option>Host or attend an event</option>
+            <option>Hand-sell / stock locally</option>
+            <option>Spread the word</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="yg-label">Anything else?</label>
+        <textarea rows={4} value={form.message} onChange={set('message')} className="yg-input" style={{ resize:'vertical' }} placeholder="Tell us how you're connected to the work." />
+      </div>
+      {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem' }}>Something went wrong — email submissions@tbfentertainment.art directly.</p>}
+      <button type="submit" disabled={state === 'sending'} className="yg-btn-gold" style={{ alignSelf:'flex-start', padding:'15px 38px', opacity: state === 'sending' ? 0.6 : 1 }}>
+        {state === 'sending' ? 'Submitting…' : 'Join the Street Team'}
+      </button>
+    </form>
+  );
+}
+
 function YoungGsPage({ setPage }) {
   const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
@@ -1408,6 +1513,47 @@ function YoungGsPage({ setPage }) {
       font-size:0.65rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;
       color:#B8B4AE; border:1px solid rgba(255,255,255,0.14);
     }
+
+    /* ── Mobile-first responsive grids (stack by default, split ≥768px) ── */
+    .yg-grid-hero, .yg-grid-2, .yg-grid-author, .yg-grid-hooks, .yg-grid-vs,
+    .yg-grid-3, .yg-grid-2col {
+      display:grid; grid-template-columns:1fr; gap:40px;
+    }
+    .yg-grid-hooks { gap:2px; }
+    .yg-grid-vs { gap:2px; }
+    .yg-grid-3 { gap:16px; }
+    .yg-grid-2col { gap:20px; }
+    .yg-hero-cover { width:min(280px, 70vw); margin:0 auto; }
+    .yg-vs-divider { display:none; }
+    @media (min-width:768px) {
+      .yg-grid-hero   { grid-template-columns:1fr auto;       gap:60px; align-items:center; }
+      .yg-grid-2      { grid-template-columns:1fr 1fr;         gap:80px; align-items:center; }
+      .yg-grid-author { grid-template-columns:260px 1fr;       gap:70px; align-items:start; }
+      .yg-grid-hooks  { grid-template-columns:1fr 1fr; }
+      .yg-grid-vs     { grid-template-columns:1fr 70px 1fr; }
+      .yg-grid-3      { grid-template-columns:repeat(3,1fr); gap:20px; }
+      .yg-grid-2col   { grid-template-columns:1fr 1fr; gap:24px; }
+      .yg-hero-cover  { width:320px; margin:0; }
+      .yg-vs-divider  { display:flex; }
+    }
+
+    /* ── Forms (gold-on-dark, matches the book look) ── */
+    .yg-input {
+      width:100%; background:#111; border:1px solid rgba(255,255,255,0.14);
+      color:#F0EDE8; font-family:'Barlow','Helvetica Neue',Arial,sans-serif;
+      font-size:0.95rem; padding:14px 16px; outline:none; transition:border-color 0.2s;
+    }
+    .yg-input:focus { border-color:#C9920A; }
+    .yg-input::placeholder { color:#6B6862; }
+    .yg-label {
+      display:block; font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      font-size:0.62rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase;
+      color:#C9920A; margin-bottom:7px;
+    }
+    .yg-review-card {
+      padding:32px; background:#111; border:1px solid rgba(255,255,255,0.08);
+      display:flex; flex-direction:column; gap:16px; height:100%;
+    }
   `;
 
   return (
@@ -1418,19 +1564,22 @@ function YoungGsPage({ setPage }) {
       <section className="yg-body relative overflow-hidden" style={{ minHeight:'100vh', display:'flex', alignItems:'center', paddingTop:'80px', background:'#080808' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 60% 70% at 72% 50%, rgba(27,79,190,0.2) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 28% 60%, rgba(192,21,15,0.16) 0%, transparent 60%), radial-gradient(ellipse 80% 30% at 50% 100%, rgba(201,146,10,0.07) 0%, transparent 50%)' }} />
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full">
-          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:'60px', alignItems:'center' }}>
+          <div className="yg-grid-hero">
 
             {/* Left — copy */}
             <div>
               <Reveal>
                 <div className="yg-eyebrow">A TBF Entertainment Novel</div>
-                <div className="yg-title" style={{ fontSize:'clamp(4.5rem,9vw,8.5rem)' }}>
+                <div className="yg-title" style={{ fontSize:'clamp(3.2rem,9vw,8.5rem)' }}>
                   Young Gs<br />
                   <span style={{ fontSize:'0.36em', color:'#B8B4AE', letterSpacing:'0.3em' }}>VS</span><br />
                   <span style={{ color:'#C9920A' }}>Old Gs</span>
                 </div>
-                <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.9rem', fontWeight:600, letterSpacing:'0.14em', textTransform:'uppercase', color:'#E84040', margin:'20px 0 28px' }}>
-                  Two Generations. One City. The War Was Never Supposed to Be Personal.
+                <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.82rem', fontWeight:600, letterSpacing:'0.18em', textTransform:'uppercase', color:'#F0EDE8', margin:'22px 0 6px' }}>
+                  By O.G. Tom Tom · TBF Entertainment Publishing
+                </p>
+                <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.9rem', fontWeight:600, letterSpacing:'0.14em', textTransform:'uppercase', color:'#E84040', margin:'10px 0 28px' }}>
+                  The War Was Never Supposed to Be Personal.
                 </p>
                 <p style={{ fontSize:'1rem', color:'#B8B4AE', lineHeight:1.75, maxWidth:'460px', marginBottom:'36px' }}>
                   Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
@@ -1444,7 +1593,7 @@ function YoungGsPage({ setPage }) {
 
             {/* Right — cover */}
             <Reveal delay={180}>
-              <div className="relative flex-shrink-0" style={{ width:'320px' }}>
+              <div className="relative flex-shrink-0 yg-hero-cover">
                 <div className="absolute pointer-events-none" style={{ top:'-30px', right:'-30px', width:'70%', height:'70%', background:'radial-gradient(ellipse, rgba(27,79,190,0.28) 0%, transparent 70%)' }} />
                 <div className="absolute pointer-events-none" style={{ bottom:'-20px', left:'-20px', width:'60%', height:'60%', background:'radial-gradient(ellipse, rgba(192,21,15,0.22) 0%, transparent 70%)' }} />
                 <img
@@ -1473,7 +1622,7 @@ function YoungGsPage({ setPage }) {
             </div>
             <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.65rem', fontWeight:600, letterSpacing:'0.22em', textTransform:'uppercase', color:'#C9920A', marginBottom:'52px' }}>— O.G. Tom Tom</p>
           </Reveal>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px' }}>
+          <div className="yg-grid-hooks">
             {[
               { n:'01', title:'Young Gs', body:'Came up with nothing and built something. Fast, fearless, organized — running the streets with precision no one gave them credit for. They didn\'t inherit anything. They took it.' },
               { n:'02', title:'Old Gs', body:'Built an empire and refuse to let go. Forty years of money, power, and patience. They\'ve survived everything the streets threw at them. They weren\'t ready for what came next.' },
@@ -1494,7 +1643,7 @@ function YoungGsPage({ setPage }) {
 
       {/* ── SYNOPSIS + SPREAD ── */}
       <section className="yg-body" style={{ padding:'90px 0', background:'#080808' }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-10" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'80px', alignItems:'center' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 yg-grid-2">
           <div>
             <Reveal>
               <div className="yg-eyebrow">The Story</div>
@@ -1546,7 +1695,7 @@ function YoungGsPage({ setPage }) {
               </div>
             </div>
           </Reveal>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 70px 1fr', gap:0, alignItems:'stretch' }}>
+          <div className="yg-grid-vs" style={{ alignItems:'stretch' }}>
             <Reveal delay={80}>
               <div style={{ padding:'44px 40px', background:'rgba(27,79,190,0.07)', border:'1px solid rgba(27,79,190,0.2)' }}>
                 <div style={{ fontFamily:"'Georgia',serif", fontSize:'2rem', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.06em', color:'#4A7FE8', marginBottom:'18px' }}>Young Gs</div>
@@ -1557,7 +1706,7 @@ function YoungGsPage({ setPage }) {
                 </div>
               </div>
             </Reveal>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Georgia',serif", fontSize:'1.6rem', fontWeight:900, color:'rgba(255,255,255,0.12)', letterSpacing:'0.1em' }}>VS</div>
+            <div className="yg-vs-divider" style={{ alignItems:'center', justifyContent:'center', fontFamily:"'Georgia',serif", fontSize:'1.6rem', fontWeight:900, color:'rgba(255,255,255,0.12)', letterSpacing:'0.1em' }}>VS</div>
             <Reveal delay={160}>
               <div style={{ padding:'44px 40px', background:'rgba(201,146,10,0.07)', border:'1px solid rgba(201,146,10,0.2)' }}>
                 <div style={{ fontFamily:"'Georgia',serif", fontSize:'2rem', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.06em', color:'#C9920A', marginBottom:'18px' }}>Old Gs</div>
@@ -1574,7 +1723,7 @@ function YoungGsPage({ setPage }) {
 
       {/* ── AUTHOR ── */}
       <section className="yg-body" style={{ padding:'90px 0', background:'#080808' }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-10" style={{ display:'grid', gridTemplateColumns:'260px 1fr', gap:'70px', alignItems:'start' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 yg-grid-author">
           <Reveal>
             <div style={{ position:'relative' }}>
               <div style={{ width:'100%', aspectRatio:'3/4', background:'#141414', border:'1px solid rgba(255,255,255,0.07)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
@@ -1604,8 +1753,95 @@ function YoungGsPage({ setPage }) {
         </div>
       </section>
 
+      {/* ── REVIEWS ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#0E0E0E', position:'relative', overflow:'hidden' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(201,146,10,0.05) 0%, transparent 60%)' }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:'14px' }}>
+              <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Early Word</div>
+              <div className="yg-title" style={{ fontSize:'clamp(2.2rem,3.8vw,3.6rem)' }}>
+                What Readers Are<br /><span style={{ color:'#C9920A' }}>About to Say.</span>
+              </div>
+              <p style={{ color:'#B8B4AE', fontSize:'0.95rem', maxWidth:'560px', margin:'18px auto 0', lineHeight:1.7 }}>
+                Reviews go live as the first readers finish the book. Want your name on this wall? Request an advance copy and be among the first voices on the record.
+              </p>
+            </div>
+          </Reveal>
+
+          {/* Featured editorial pull-quote — author's own positioning, honestly attributed */}
+          <Reveal delay={80}>
+            <div style={{ maxWidth:'820px', margin:'40px auto 48px', padding:'40px', background:'#111', border:'1px solid rgba(201,146,10,0.25)', borderLeft:'3px solid #C9920A' }}>
+              <p style={{ fontFamily:"'Georgia',serif", fontStyle:'italic', fontSize:'1.35rem', lineHeight:1.5, color:'#F0EDE8', marginBottom:'14px' }}>
+                "This isn't just fiction. It's perspective — the code, the mindset, and the reality behind life in the streets, told without compromise."
+              </p>
+              <span style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.62rem', fontWeight:600, letterSpacing:'0.2em', textTransform:'uppercase', color:'#C9920A' }}>— O.G. Tom Tom, Author</span>
+            </div>
+          </Reveal>
+
+          {/* Launch-ready review slots (no fabricated reviews) */}
+          <div className="yg-grid-3">
+            {[
+              { tag:'Reader Review', line:'Be one of the first readers on the record.' },
+              { tag:'Reader Review', line:'Your honest take on the takeover goes here.' },
+              { tag:'Reader Review', line:'Reserved for a launch-week voice from the city.' },
+            ].map((c, i) => (
+              <Reveal key={i} delay={i * 90}>
+                <div className="yg-review-card">
+                  <div style={{ fontFamily:"'Georgia',serif", fontSize:'2.6rem', lineHeight:1, color:'rgba(201,146,10,0.45)' }}>&ldquo;</div>
+                  <p style={{ color:'#B8B4AE', fontSize:'0.95rem', lineHeight:1.7, flex:1 }}>{c.line}</p>
+                  <div style={{ display:'flex', gap:'4px', color:'#C9920A', fontSize:'0.9rem' }}>★★★★★</div>
+                  <span style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.58rem', fontWeight:600, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,0.3)' }}>{c.tag} — Coming at Launch</span>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={120}>
+            <div style={{ textAlign:'center', marginTop:'40px' }}>
+              <button onClick={() => go('connect')} className="yg-btn-out">Request an Advance Copy</button>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── JOIN THE MOVEMENT ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#080808', position:'relative', overflow:'hidden' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(27,79,190,0.10) 0%, transparent 60%)' }} />
+        <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10" style={{ textAlign:'center' }}>
+          <Reveal>
+            <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Join the Movement</div>
+            <div className="yg-title" style={{ fontSize:'clamp(2.2rem,4vw,3.8rem)', marginBottom:'14px' }}>
+              Get In Before<br /><span style={{ color:'#C9920A' }}>Everybody Else.</span>
+            </div>
+            <p style={{ color:'#B8B4AE', fontSize:'1rem', lineHeight:1.7, maxWidth:'520px', margin:'0 auto 32px' }}>
+              Drops, signings, Book Two news, and first access — straight from TBF Entertainment. No noise. Just the work and what's next.
+            </p>
+          </Reveal>
+          <Reveal delay={100}><YGMovementForm /></Reveal>
+        </div>
+      </section>
+
+      {/* ── STREET TEAM ── */}
+      <section className="yg-body" style={{ padding:'90px 0', background:'#0E0E0E', position:'relative', overflow:'hidden' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 50% 80% at 100% 50%, rgba(201,146,10,0.08) 0%, transparent 60%)' }} />
+        <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:'36px' }}>
+              <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Street Team</div>
+              <div className="yg-title" style={{ fontSize:'clamp(2.2rem,4vw,3.8rem)', marginBottom:'14px' }}>
+                Put the Book<br /><span style={{ color:'#C9920A' }}>In People's Hands.</span>
+              </div>
+              <p style={{ color:'#B8B4AE', fontSize:'1rem', lineHeight:1.7, maxWidth:'520px', margin:'0 auto' }}>
+                Readers and supporters move this further than any ad. Post it, hand-sell it, host a spot, spread the word — sign up and we'll get you what you need.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={100}><YGStreetTeamForm /></Reveal>
+        </div>
+      </section>
+
       {/* ── BUY CTA ── */}
-      <section className="yg-body" style={{ padding:'90px 0', background:'#0E0E0E', position:'relative', overflow:'hidden', textAlign:'center' }}>
+      <section className="yg-body" style={{ padding:'90px 0', background:'#080808', position:'relative', overflow:'hidden', textAlign:'center' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(201,146,10,0.06) 0%, transparent 60%)' }} />
         <div className="relative z-10 max-w-2xl mx-auto px-6 lg:px-10">
           <Reveal>
@@ -1631,6 +1867,32 @@ function YoungGsPage({ setPage }) {
               </button>
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ── MEDIA & CONTACT ── */}
+      <section className="yg-body" style={{ padding:'80px 0', background:'#0E0E0E', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:'40px' }}>
+              <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Media &amp; Contact</div>
+              <div className="yg-title" style={{ fontSize:'clamp(1.9rem,3.2vw,3rem)' }}>Press, Partnerships &amp; Inquiries</div>
+            </div>
+          </Reveal>
+          <div className="yg-grid-2col" style={{ maxWidth:'760px', margin:'0 auto' }}>
+            {[
+              { label:'Media Inquiries', desc:'Interviews, features, press, and review copies for the book and the author.', email:'media@tbfentertainment.art' },
+              { label:'General Inquiries', desc:'Everything else — readers, partnerships, and TBF Entertainment business.', email:'info@tbfentertainment.art' },
+            ].map((c) => (
+              <Reveal key={c.email}>
+                <div style={{ padding:'30px', background:'#111', border:'1px solid rgba(255,255,255,0.08)', height:'100%' }}>
+                  <div style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.95rem', fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#F0EDE8', marginBottom:'8px' }}>{c.label}</div>
+                  <p style={{ color:'#B8B4AE', fontSize:'0.9rem', lineHeight:1.7, marginBottom:'16px' }}>{c.desc}</p>
+                  <a href={`mailto:${c.email}`} className="yg-gold" style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.9rem', fontWeight:600, letterSpacing:'0.06em', textDecoration:'none' }}>{c.email} ↗</a>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
     </>
