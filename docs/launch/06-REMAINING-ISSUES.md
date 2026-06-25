@@ -13,13 +13,15 @@ the files in (see `04-ASSET-REPLACEMENT-REPORT.md`):
 - `public/author-tomtom.jpg` ← author photo
 - `docs/media-kit/assets/YoungGs-3D-mockup.png` ← 3D mockup
 
-## 2. Title naming decision — "Old G's" vs "O.G.'s" 🟡
-The project brief calls the book **"Young G's vs. O.G.'s"**, but the approved
-cover art and the existing site both read **"YOUNG GS VS OLD GS."** Because we
-are not redesigning approved assets, the site keeps **"Young Gs vs. Old Gs"**
-to match the cover. If "O.G.'s" is the intended public spelling, confirm and
-the display text can be updated site-wide in one pass. Subtitle "The Prefix"
-is applied regardless.
+## 2. Title naming decision — RESOLVED ✅
+Confirmed spelling: **Young G's vs. O.G.'s**, subtitle **Book One: The
+Prefix**. Applied to all title displays (headings, hero title, alt text,
+catalog cards, metadata, JSON-LD, media kit). In-story faction prose
+("Young Gs came up…", "Old Gs built an empire", the VS columns) is left
+as-is on purpose, since those read as faction names and match the cover art
+("YOUNG GS / OLD GS"). Note for the cover/asset team: the approved cover art
+still reads "OLD GS" — confirm whether the printed cover should be updated to
+"O.G.'S" to match the title, or whether the cover wording stays.
 
 ## 3. Live Amazon URLs ⚠️
 Set `AMAZON_PAPERBACK_URL` and `AMAZON_KINDLE_URL` in `src/App.jsx` once the

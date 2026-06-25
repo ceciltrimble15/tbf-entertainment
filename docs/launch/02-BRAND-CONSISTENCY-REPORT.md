@@ -8,8 +8,8 @@
 | --- | --- |
 | Publisher | TBF Entertainment / TBF Entertainment Publishing |
 | Master logo | `public/logo.png` — silver/blue TBF hat mark |
-| Book title | Young G's vs. Old G's |
-| Subtitle | **The Prefix** (Book One) |
+| Book title | Young G's vs. O.G.'s |
+| Subtitle | **Book One: The Prefix** |
 | Author | O.G. Tom Tom |
 | Cover file | `public/book-cover.png` (one file, referenced everywhere) |
 | Domain | tbfentertainment.art |

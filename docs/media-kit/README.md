@@ -1,6 +1,6 @@
 # TBF Entertainment — Media Kit
 
-**Title:** *Young G's vs. Old G's: The Prefix* (Book One)
+**Title:** *Young G's vs. O.G.'s* — Book One: The Prefix
 **Author:** O.G. Tom Tom
 **Publisher:** TBF Entertainment Publishing
 **Format:** Paperback + eBook (Kindle)
@@ -30,7 +30,7 @@ one war that changes everything.
 
 ## 4. Long synopsis (≈120 words)
 
-Set in Cincinnati and told on its own terms, *Young G's vs. Old G's: The
+Set in Cincinnati and told on its own terms, *Young G's vs. O.G.'s: The
 Prefix* is the debut novel from TBF Entertainment Publishing. A young crew
 with nothing to lose runs the streets with a precision nobody gave them
 credit for — until a single move in broad daylight, over a name, starts a
@@ -46,7 +46,7 @@ reckoning.
 O.G. Tom Tom writes from a real perspective — rooted in lived experience,
 pressure, and the consequences that come with it. His stories don't just
 entertain; they expose the code, the mindset, and the reality behind life
-in the streets. *Young G's vs. Old G's: The Prefix* is his debut novel and
+in the streets. *Young G's vs. O.G.'s: The Prefix* is his debut novel and
 the first title from TBF Entertainment Publishing. This isn't just fiction.
 It's perspective.
 
@@ -55,12 +55,12 @@ It's perspective.
 TBF Entertainment is a culture-driven entertainment company building
 powerful stories, visual identity, and creative expansion through
 publishing, artistry, and media. Built from reality. Nothing added.
-Everything earned. *Young G's vs. Old G's: The Prefix* is the company's
+Everything earned. *Young G's vs. O.G.'s: The Prefix* is the company's
 debut release and the first chapter of a long-term creative catalog.
 
 ## 7. Coming soon
 
-- **Book Two** — *Young G's vs. Old G's* (in development)
+- **Book Two** — *Young G's vs. O.G.'s* (in development)
 - Additional TBF Publishing titles — announced soon
 - TBF Artistry and Media divisions — in development
 
