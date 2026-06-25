@@ -13,29 +13,87 @@ import { useState, useEffect, useRef } from 'react';
 
    One-line setup is documented in docs/LAUNCH_OPS.md.
 ───────────────────────────────────────────────────────── */
-const FORM_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
+// Configurable at deploy time via a Vercel env var (VITE_FORM_ENDPOINT) so the
+// form backend can be set WITHOUT editing code. Falls back to the inline value.
+const FORM_ENDPOINT = (import.meta.env && import.meta.env.VITE_FORM_ENDPOINT) || ''; // e.g. 'https://formspree.io/f/abcdwxyz'
 const CONTACT_EMAIL = 'info@tbfentertainment.art';
 
+/* ─────────────────────────────────────────────────────────
+   BOOK & RETAIL CONFIG — SINGLE SOURCE OF TRUTH
+
+   Every "Buy" button on the site reads from these constants.
+   When the live Amazon listings go live, paste the product
+   URLs here ONCE and every buy button across the whole site
+   updates. No retail URL is hardcoded anywhere else.
+
+   - AMAZON_PAPERBACK_URL → KDP paperback product page
+   - AMAZON_KINDLE_URL    → Kindle / eBook product page
+
+   Leave them '' until the listing is live. While empty, the
+   buttons fall back to BOOK_SEARCH_URL (an Amazon search for
+   the title) so no button is ever dead, then auto-upgrade to
+   the exact product page the instant a URL is filled in.
+───────────────────────────────────────────────────────── */
+const AMAZON_PAPERBACK_URL = ''; // e.g. 'https://www.amazon.com/dp/XXXXXXXXXX'
+const AMAZON_KINDLE_URL    = ''; // e.g. 'https://www.amazon.com/dp/XXXXXXXXXX'
+const BOOK_SEARCH_URL = 'https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom';
+
+// Best available buy link: exact product page when set, else search fallback.
+const BUY_PAPERBACK_URL = AMAZON_PAPERBACK_URL || BOOK_SEARCH_URL;
+const BUY_KINDLE_URL    = AMAZON_KINDLE_URL    || BOOK_SEARCH_URL;
+const BUY_URL           = AMAZON_PAPERBACK_URL || AMAZON_KINDLE_URL || BOOK_SEARCH_URL;
+
+/* Book identity — keep in sync with the cover, KDP metadata, and media kit. */
+const BOOK = {
+  title:     "Young G's vs. O.G.'s",
+  subtitle:  'The Prefix',
+  series:    'Book One',
+  author:    'O.G. Tom Tom',
+  publisher: 'TBF Entertainment Publishing',
+};
+
 async function submitLead(payload, to = CONTACT_EMAIL) {
+  // Spam honeypot: if the hidden field was filled, it's a bot. Pretend success,
+  // send nothing.
+  if (payload && payload._gotcha) return 'spam';
+  const clean = { ...payload };
+  delete clean._gotcha;
+  const subject = `[TBF ${clean.type || 'Inquiry'}] ${clean.name || clean.email || ''}`.trim();
+
   if (FORM_ENDPOINT) {
-    const res = await fetch(FORM_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      // _to lets a configured Formspree/route forward to the right inbox.
-      body: JSON.stringify({ ...payload, _to: to }),
-    });
-    if (!res.ok) throw new Error('Submission failed');
-    return 'sent';
+    try {
+      const res = await fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        // _to / _subject let a configured Formspree route forward to the right inbox.
+        body: JSON.stringify({ ...clean, _to: to, _subject: subject }),
+      });
+      if (res.ok) return 'sent';
+      // Bad response → fall through to mailto so the lead is never lost.
+    } catch {
+      // Network error → fall through to mailto.
+    }
   }
-  // No endpoint configured yet → don't lose the lead: open a pre-filled email
-  // addressed to the destination this form should route to.
-  const subject = `[TBF ${payload.type || 'Inquiry'}] ${payload.name || payload.email || ''}`.trim();
-  const body = Object.entries(payload)
+  // No endpoint configured (or it failed) → open a pre-filled email addressed to
+  // the destination this form routes to, so no lead is ever silently lost.
+  const body = Object.entries(clean)
     .filter(([, v]) => v)
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
   window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   return 'mailto';
+}
+
+/* Hidden spam honeypot. Real users never see or fill it; bots do, and
+   submitLead silently drops any submission where it is filled. */
+function Honeypot({ value, onChange }) {
+  return (
+    <input
+      type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true"
+      value={value} onChange={onChange}
+      style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden', opacity: 0 }}
+    />
+  );
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -352,7 +410,7 @@ function BookCover({ size = 'lg' }) {
     >
       <img
         src="/book-cover.png"
-        alt="Young Gs vs Old Gs: The Takeover — TBF Entertainment"
+        alt="Young G's vs. O.G.'s: The Prefix (Book One) — a TBF Entertainment novel by O.G. Tom Tom"
         draggable={false}
         style={{
           width: '100%',
@@ -434,6 +492,7 @@ function ConnectForm({ compact = false }) {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
+  const [gotcha, setGotcha] = useState('');
 
   const handleSubmit = async (payload) => {
     setError('');
@@ -465,7 +524,8 @@ function ConnectForm({ compact = false }) {
   if (compact) {
     return (
       <div className="max-w-lg mx-auto">
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email, _gotcha: gotcha }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+          <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
           <input
             type="email" placeholder="Enter your email" value={email}
             onChange={(e) => setEmail(e.target.value)} required
@@ -482,7 +542,8 @@ function ConnectForm({ compact = false }) {
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message }); }} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message, _gotcha: gotcha }); }} className="flex flex-col gap-5">
+      <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="eyebrow block mb-2">Name</label>
@@ -677,7 +738,7 @@ function HomePage({ setPage }) {
                 Young G's<br />vs. O.G.'s
               </h2>
               <p className="font-body uppercase tracking-[0.14em] mb-6" style={{ fontSize: '0.72rem', color: '#C0C0C0' }}>
-                The Takeover — Book One
+                Book One: The Prefix
               </p>
 
               <div className="blue-line" />
@@ -688,7 +749,7 @@ function HomePage({ setPage }) {
 
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                  href={BUY_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-blue"
@@ -831,9 +892,9 @@ function HomePage({ setPage }) {
                 <span className="font-body font-bold uppercase tracking-[0.2em] text-tbf-blue" style={{ fontSize: '0.6rem' }}>Debut Release</span>
               </div>
               <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)' }}>
-                Young Gs<br />vs. Old Gs
+                Young G's<br />vs. O.G.'s
               </h3>
-              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>The Takeover — Book One</p>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>Book One: The Prefix</p>
               <div className="w-10 h-px mb-5" style={{ background: '#1E90FF' }} />
               <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                 The debut release under TBF Entertainment Publishing. A story rooted in real culture, generational tension, and authentic street narratives — told with discipline and intent.
@@ -1057,7 +1118,7 @@ function PublishingPage({ setPage }) {
                     <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
                   </div>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={BUY_URL}
                     target="_blank" rel="noopener noreferrer"
                     className="btn-blue w-full text-center"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
@@ -1071,15 +1132,15 @@ function PublishingPage({ setPage }) {
 
             <Reveal delay={200}>
               <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
-                Young Gs<br />vs. Old Gs
+                Young G's<br />vs. O.G.'s
               </h2>
-              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>The Takeover — Book One</p>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>Book One: The Prefix</p>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed mb-5" style={{ fontSize: '1rem' }}>
                 The debut release from TBF Entertainment Publishing. A story rooted in generational tension, street culture, and authentic voice — told without compromise and built to last in the catalog.
               </p>
               <p className="font-body text-tbf-silver-dim leading-relaxed mb-8" style={{ fontSize: '0.9rem' }}>
-                Young Gs vs. Old Gs: The Takeover sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
+                Young G's vs. O.G.'s: The Prefix sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
               </p>
               <div className="p-6 mb-8" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
                 <p className="font-body text-tbf-silver italic leading-relaxed" style={{ fontSize: '0.95rem' }}>
@@ -1105,7 +1166,7 @@ function PublishingPage({ setPage }) {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          KDP LAUNCH CAMPAIGN — Young Gs vs. Old Gs: The Takeover
+          KDP LAUNCH CAMPAIGN — Young G's vs. O.G.'s: The Prefix
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.022) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
@@ -1119,7 +1180,7 @@ function PublishingPage({ setPage }) {
               </h2>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed max-w-2xl" style={{ fontSize: '1rem' }}>
-                Young G's vs. Old Gs: The Takeover is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
+                Young G's vs. O.G.'s: The Prefix is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
               </p>
             </div>
           </Reveal>
@@ -1133,9 +1194,9 @@ function PublishingPage({ setPage }) {
                   <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Available Now — Print &amp; eBook</span>
                 </div>
                 <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.8rem)' }}>
-                  Young Gs vs. Old Gs
+                  Young G's vs. O.G.'s
                 </h3>
-                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>The Takeover — Book One</p>
+                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>Book One: The Prefix</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                   Book One of the series. Nine chapters. A war in Cincinnati. A young crew with nothing to lose against four OG legends with forty years of patience behind them.
                 </p>
@@ -1161,7 +1222,7 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={BUY_PAPERBACK_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-blue text-center"
@@ -1359,13 +1420,14 @@ function PublishingPage({ setPage }) {
 /* Email signup — "Join the Movement". Routes to info@tbfentertainment.art. */
 function YGMovementForm() {
   const [email, setEmail] = useState('');
+  const [gotcha, setGotcha] = useState('');
   const [state, setState] = useState('idle'); // idle | sending | done | error
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
     try {
-      await submitLead({ type: 'Movement', email, source: "Young Gs landing page" }, 'info@tbfentertainment.art');
+      await submitLead({ type: 'Movement', email, source: "Young Gs landing page", _gotcha: gotcha }, 'info@tbfentertainment.art');
       setState('done');
     } catch { setState('error'); }
   };
@@ -1381,6 +1443,7 @@ function YGMovementForm() {
 
   return (
     <form onSubmit={submit} style={{ maxWidth:'520px', margin:'0 auto' }}>
+      <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="email" required placeholder="Enter your email" value={email}
@@ -1399,13 +1462,14 @@ function YGMovementForm() {
 function YGStreetTeamForm() {
   const [form, setForm] = useState({ name:'', email:'', city:'', help:'Post on social / BookTok', message:'' });
   const [state, setState] = useState('idle');
+  const [gotcha, setGotcha] = useState('');
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
     try {
-      await submitLead({ type: 'Street Team', ...form }, 'submissions@tbfentertainment.art');
+      await submitLead({ type: 'Street Team', ...form, _gotcha: gotcha }, 'info@tbfentertainment.art');
       setState('done');
     } catch { setState('error'); }
   };
@@ -1421,6 +1485,7 @@ function YGStreetTeamForm() {
 
   return (
     <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:'18px' }}>
+      <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
       <div className="yg-grid-2col">
         <div>
           <label className="yg-label">Name</label>
@@ -1456,6 +1521,30 @@ function YGStreetTeamForm() {
         {state === 'sending' ? 'Submitting…' : 'Join the Street Team'}
       </button>
     </form>
+  );
+}
+
+/* Author portrait — uses /author-tomtom.jpg, falls back to a
+   branded monogram plate if the image isn't present yet so the
+   layout never breaks before the photo is dropped in. */
+function AuthorPhoto() {
+  const [ok, setOk] = useState(true);
+  return (
+    <div style={{ position:'relative' }}>
+      <div style={{ width:'100%', aspectRatio:'3/4', background:'#141414', border:'1px solid rgba(255,255,255,0.07)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+        {ok ? (
+          <img
+            src="/author-tomtom.jpg"
+            alt="O.G. Tom Tom — author, TBF Entertainment Publishing"
+            onError={() => setOk(false)}
+            style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', display:'block' }}
+          />
+        ) : (
+          <span style={{ fontFamily:"'Georgia',serif", fontSize:'0.9rem', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.1)', textAlign:'center' }}>O.G.<br />Tom Tom</span>
+        )}
+      </div>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'#C9920A', padding:'9px 14px', fontFamily:"'Georgia',serif", fontSize:'1rem', letterSpacing:'0.1em', fontWeight:900, textTransform:'uppercase', color:'#080808' }}>O.G. Tom Tom</div>
+    </div>
   );
 }
 
@@ -1571,9 +1660,9 @@ function YoungGsPage({ setPage }) {
               <Reveal>
                 <div className="yg-eyebrow">A TBF Entertainment Novel</div>
                 <div className="yg-title" style={{ fontSize:'clamp(3.2rem,9vw,8.5rem)' }}>
-                  Young Gs<br />
+                  Young G's<br />
                   <span style={{ fontSize:'0.36em', color:'#B8B4AE', letterSpacing:'0.3em' }}>VS</span><br />
-                  <span style={{ color:'#C9920A' }}>Old Gs</span>
+                  <span style={{ color:'#C9920A' }}>O.G.'s</span>
                 </div>
                 <p style={{ fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.82rem', fontWeight:600, letterSpacing:'0.18em', textTransform:'uppercase', color:'#F0EDE8', margin:'22px 0 6px' }}>
                   By O.G. Tom Tom · TBF Entertainment Publishing
@@ -1585,7 +1674,7 @@ function YoungGsPage({ setPage }) {
                   Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
                 </p>
                 <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
-                  <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
+                  <a href={BUY_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
                   <button onClick={() => go('connect')} className="yg-btn-out">Request ARC Copy</button>
                 </div>
               </Reveal>
@@ -1598,7 +1687,7 @@ function YoungGsPage({ setPage }) {
                 <div className="absolute pointer-events-none" style={{ bottom:'-20px', left:'-20px', width:'60%', height:'60%', background:'radial-gradient(ellipse, rgba(192,21,15,0.22) 0%, transparent 70%)' }} />
                 <img
                   src="/book-cover.png"
-                  alt="Young Gs vs Old Gs — O.G. Tom Tom"
+                  alt="Young G's vs. O.G.'s — O.G. Tom Tom"
                   style={{ width:'100%', aspectRatio:'2/3', objectFit:'cover', objectPosition:'right center', display:'block', boxShadow:'-16px 16px 60px rgba(192,21,15,0.28), 16px 16px 60px rgba(27,79,190,0.28), 0 32px 100px rgba(0,0,0,0.9)', border:'1px solid rgba(201,146,10,0.15)' }}
                 />
                 <div style={{ position:'absolute', bottom:'-14px', left:0, fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.58rem', fontWeight:600, letterSpacing:'0.24em', textTransform:'uppercase', color:'#C9920A', background:'#0E0E0E', padding:'5px 12px', border:'1px solid rgba(201,146,10,0.3)' }}>
@@ -1665,14 +1754,14 @@ function YoungGsPage({ setPage }) {
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'28px' }}>
                 Cincinnati, Ohio — a city that rarely gets its story told on its own terms. Until now.
               </p>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
+              <a href={BUY_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
             </Reveal>
           </div>
           <Reveal delay={120}>
             <div>
               <img
                 src="/book-cover.png"
-                alt="Full cover spread — Young Gs vs Old Gs"
+                alt="Full cover spread — Young G's vs. O.G.'s"
                 style={{ width:'100%', display:'block', objectFit:'cover', objectPosition:'left center', maxHeight:'440px', boxShadow:'0 20px 80px rgba(0,0,0,0.8)', border:'1px solid rgba(255,255,255,0.05)' }}
               />
               <p style={{ marginTop:'12px', fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.6rem', fontWeight:600, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.25)', textAlign:'center' }}>
@@ -1725,12 +1814,7 @@ function YoungGsPage({ setPage }) {
       <section className="yg-body" style={{ padding:'90px 0', background:'#080808' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10 yg-grid-author">
           <Reveal>
-            <div style={{ position:'relative' }}>
-              <div style={{ width:'100%', aspectRatio:'3/4', background:'#141414', border:'1px solid rgba(255,255,255,0.07)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
-                <span style={{ fontFamily:"'Georgia',serif", fontSize:'0.9rem', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.1)' }}>O.G.<br />Tom Tom</span>
-              </div>
-              <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'#C9920A', padding:'9px 14px', fontFamily:"'Georgia',serif", fontSize:'1rem', letterSpacing:'0.1em', fontWeight:900, textTransform:'uppercase', color:'#080808' }}>O.G. Tom Tom</div>
-            </div>
+            <AuthorPhoto />
           </Reveal>
           <div>
             <Reveal>
@@ -1739,14 +1823,32 @@ function YoungGsPage({ setPage }) {
             </Reveal>
             <Reveal delay={100}>
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'16px' }}>
-                O.G. Tom Tom writes from a real perspective — rooted in lived experience, pressure, and the consequences that come with it.
+                O.G. Tom Tom writes from a real perspective — rooted in lived experience, pressure, and the consequences that come with it. <em style={{ color:'#F0EDE8', fontStyle:'normal' }}>Young G's vs. O.G.'s: The Prefix</em> is his debut novel and the first title from TBF Entertainment Publishing.
               </p>
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'16px' }}>
-                His stories don't just entertain — they expose the code, the mindset, and the reality behind life in the streets. <strong style={{ color:'#F0EDE8', fontWeight:500 }}>This isn't just fiction. It's perspective.</strong>
+                His stories don't just entertain — they expose the code, the mindset, and the reality behind life in the streets. Set in Cincinnati and told on its own terms, his work puts a generation's voice on the record without compromise. <strong style={{ color:'#F0EDE8', fontWeight:500 }}>This isn't just fiction. It's perspective.</strong>
               </p>
               <div className="yg-pull" style={{ borderLeftColor:'#4A7FE8', background:'rgba(27,79,190,0.05)' }}>
                 <p>"Two generations. Two codes. One war that will change everything."</p>
-                <span style={{ color:'#4A7FE8' }}>— Young Gs vs Old Gs</span>
+                <span style={{ color:'#4A7FE8' }}>— Young G's vs. O.G.'s</span>
+              </div>
+
+              {/* Publisher */}
+              <div style={{ marginTop:'28px', paddingTop:'24px', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
+                <div className="yg-eyebrow">Published By</div>
+                <p style={{ fontSize:'0.92rem', color:'#B8B4AE', lineHeight:1.75 }}>
+                  <strong style={{ color:'#F0EDE8', fontWeight:600 }}>TBF Entertainment Publishing</strong> — a culture-driven entertainment company building powerful stories, visual identity, and creative expansion through publishing, artistry, and media. Built from reality. Nothing added. Everything earned.
+                </p>
+              </div>
+
+              {/* Coming soon */}
+              <div style={{ marginTop:'24px', paddingTop:'24px', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
+                <div className="yg-eyebrow">Next From O.G. Tom Tom</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:'10px' }}>
+                  {['Book Two — In Development', 'More Titles Coming'].map((t) => (
+                    <span key={t} className="yg-format-pill">{t}</span>
+                  ))}
+                </div>
               </div>
             </Reveal>
           </div>
@@ -1850,7 +1952,7 @@ function YoungGsPage({ setPage }) {
               Get the<br /><span style={{ color:'#C9920A' }}>Book.</span>
             </div>
             <p style={{ fontSize:'0.98rem', color:'#B8B4AE', marginBottom:'32px', lineHeight:1.7 }}>
-              Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />Available in print and eBook everywhere books are sold.
+              Young G's vs. O.G.'s — a TBF Entertainment novel by O.G. Tom Tom.<br />Available in print and eBook everywhere books are sold.
             </p>
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
               {['Print — Paperback','eBook — Kindle','Amazon KDP','IngramSpark'].map(f => (
@@ -1858,7 +1960,7 @@ function YoungGsPage({ setPage }) {
               ))}
             </div>
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
+              <a href={BUY_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
               <button onClick={() => go('connect')} className="yg-btn-out" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Request ARC Copy</button>
             </div>
             <div style={{ marginTop:'40px', paddingTop:'28px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
@@ -2137,9 +2239,9 @@ function BooksPage({ setPage }) {
                   <span className="font-body font-semibold uppercase tracking-[0.18em]" style={{ fontSize: '0.62rem', color: '#C9920A' }}>Flagship Release — Book One</span>
                 </div>
                 <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>
-                  Young Gs vs Old Gs
+                  Young G's vs. O.G.'s
                 </h3>
-                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>The Takeover — O.G. Tom Tom</p>
+                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>Book One: The Prefix — O.G. Tom Tom</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-6" style={{ fontSize: '0.96rem', maxWidth: '420px' }}>
                   A war in Cincinnati. Young Gs with nothing to lose. Four OG legends with forty years of patience. Two codes. One outcome.
                 </p>
@@ -2148,7 +2250,7 @@ function BooksPage({ setPage }) {
                     View Book Page →
                   </button>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom"
+                    href={BUY_URL}
                     target="_blank" rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="btn-outline-blue"
@@ -2171,7 +2273,7 @@ function BooksPage({ setPage }) {
           </Reveal>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { title: 'Book Two', sub: 'Young Gs vs Old Gs — Untitled', status: 'In Development' },
+              { title: 'Book Two', sub: "Young G's vs. O.G.'s — Untitled", status: 'In Development' },
               { title: 'TBF Title 02', sub: 'Urban Fiction — Upcoming', status: 'Announced Soon' },
               { title: 'TBF Title 03', sub: 'Street Lit — Upcoming', status: 'Announced Soon' },
             ].map((item, i) => (

@@ -12,7 +12,7 @@ One row per book. The catalog backbone.
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| Title | Single line text | e.g. `Young G's vs. Old G's: The Takeover` |
+| Title | Single line text | e.g. `Young G's vs. Old G's: The Prefix` |
 | Series | Single line text | `Young G's vs. Old G's` |
 | Book # | Number | `1` |
 | Author | Single line text | `O.G. Tom Tom` |
@@ -25,7 +25,7 @@ One row per book. The catalog backbone.
 | Launch Date | Date | |
 | Notes | Long text | |
 
-Seed row: `Young G's vs. Old G's: The Takeover` — Book 1 — O.G. Tom Tom — Status `Live` — Formats `Paperback, eBook`.
+Seed row: `Young G's vs. Old G's: The Prefix` — Book 1 — O.G. Tom Tom — Status `Live` — Formats `Paperback, eBook`.
 
 ---
 
