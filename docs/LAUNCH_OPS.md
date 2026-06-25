@@ -20,26 +20,18 @@ The site is a single-page React/Vite app (`src/App.jsx`). State-based routing �
 
 ## Lead capture — REQUIRED before launch
 
-The email-capture box and the contact form are wired to a real submit path in `src/App.jsx`, but they need **one** config value to deliver to you:
+All forms are wired to a real submit path in `src/App.jsx` and **every form now routes to `info@tbfentertainment.art`** (contact, early-access, "Join the Movement", and Street Team). The flow is QA-verified end-to-end (see `docs/launch/07-FINAL-LAUNCH-QA-REPORT.md`): each form POSTs the lead with `_to: info@tbfentertainment.art`, a hidden honeypot blocks bot spam, and any backend failure falls back to a pre-filled email so **no lead is ever lost**.
 
-1. Create a free form at **https://formspree.io** using `info@tbfentertainment.art`.
-2. Copy its endpoint, e.g. `https://formspree.io/f/abcdwxyz`.
-3. In `src/App.jsx`, set `const FORM_ENDPOINT = 'https://formspree.io/f/abcdwxyz';`
-4. `npm run build` (and `npm run build:standalone` if you use the single file), then redeploy.
+It needs **one** config value to deliver to your inbox automatically. Two ways:
 
-Until `FORM_ENDPOINT` is set, forms **fall back to opening the visitor's email client** — leads are not lost, but capture is manual. Set the endpoint to automate it (and to optionally pipe leads straight into the Airtable tracker via Formspree → Airtable).
+**Option A — Vercel env var (no code edit, recommended):**
+1. Create a free form at **https://formspree.io** (or https://web3forms.com) using `info@tbfentertainment.art`.
+2. In Vercel → Project → Settings → Environment Variables, add `VITE_FORM_ENDPOINT = https://formspree.io/f/xxxxxxxx`.
+3. Redeploy. (Vite inlines `VITE_*` vars at build time.)
 
-### Per-form routing (Young G's landing page)
-The forms pass a destination address to `submitLead(payload, to)`:
+**Option B — in code:** set `const FORM_ENDPOINT = 'https://formspree.io/f/xxxxxxxx';` in `src/App.jsx`, then `npm run build` (+ `build:standalone`) and redeploy.
 
-| Form | Routes to |
-| --- | --- |
-| Site email capture + contact | `info@tbfentertainment.art` |
-| "Join the Movement" email signup | `info@tbfentertainment.art` |
-| Street Team signup | `submissions@tbfentertainment.art` |
-| Media / General contact cards | `media@` / `info@` (direct mailto links) |
-
-The **mailto fallback honors these destinations exactly**. Note: a single free **Formspree** form delivers to one inbox — to keep Street Team going to `submissions@`, either create a **second Formspree form** for it (and set its endpoint), use Formspree's routing rules, or forward via a Google Workspace filter. The `_to` field is included in the POST for tools that support address routing.
+Until the endpoint is set, forms **fall back to opening the visitor's email client** addressed to `info@` — leads aren't lost, but capture is manual. A single free Formspree/Web3Forms form delivers every submission to `info@`; each lead carries a `type` field (Early Access / Movement / Street Team / inquiry type) so you can filter in the inbox.
 
 ## Pre-launch quick gate
 

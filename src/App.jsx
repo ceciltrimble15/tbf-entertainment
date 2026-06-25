@@ -13,7 +13,9 @@ import { useState, useEffect, useRef } from 'react';
 
    One-line setup is documented in docs/LAUNCH_OPS.md.
 ───────────────────────────────────────────────────────── */
-const FORM_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
+// Configurable at deploy time via a Vercel env var (VITE_FORM_ENDPOINT) so the
+// form backend can be set WITHOUT editing code. Falls back to the inline value.
+const FORM_ENDPOINT = (import.meta.env && import.meta.env.VITE_FORM_ENDPOINT) || ''; // e.g. 'https://formspree.io/f/abcdwxyz'
 const CONTACT_EMAIL = 'info@tbfentertainment.art';
 
 /* ─────────────────────────────────────────────────────────
@@ -51,25 +53,47 @@ const BOOK = {
 };
 
 async function submitLead(payload, to = CONTACT_EMAIL) {
+  // Spam honeypot: if the hidden field was filled, it's a bot. Pretend success,
+  // send nothing.
+  if (payload && payload._gotcha) return 'spam';
+  const clean = { ...payload };
+  delete clean._gotcha;
+  const subject = `[TBF ${clean.type || 'Inquiry'}] ${clean.name || clean.email || ''}`.trim();
+
   if (FORM_ENDPOINT) {
-    const res = await fetch(FORM_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      // _to lets a configured Formspree/route forward to the right inbox.
-      body: JSON.stringify({ ...payload, _to: to }),
-    });
-    if (!res.ok) throw new Error('Submission failed');
-    return 'sent';
+    try {
+      const res = await fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        // _to / _subject let a configured Formspree route forward to the right inbox.
+        body: JSON.stringify({ ...clean, _to: to, _subject: subject }),
+      });
+      if (res.ok) return 'sent';
+      // Bad response → fall through to mailto so the lead is never lost.
+    } catch {
+      // Network error → fall through to mailto.
+    }
   }
-  // No endpoint configured yet → don't lose the lead: open a pre-filled email
-  // addressed to the destination this form should route to.
-  const subject = `[TBF ${payload.type || 'Inquiry'}] ${payload.name || payload.email || ''}`.trim();
-  const body = Object.entries(payload)
+  // No endpoint configured (or it failed) → open a pre-filled email addressed to
+  // the destination this form routes to, so no lead is ever silently lost.
+  const body = Object.entries(clean)
     .filter(([, v]) => v)
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
   window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   return 'mailto';
+}
+
+/* Hidden spam honeypot. Real users never see or fill it; bots do, and
+   submitLead silently drops any submission where it is filled. */
+function Honeypot({ value, onChange }) {
+  return (
+    <input
+      type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true"
+      value={value} onChange={onChange}
+      style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden', opacity: 0 }}
+    />
+  );
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -468,6 +492,7 @@ function ConnectForm({ compact = false }) {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
+  const [gotcha, setGotcha] = useState('');
 
   const handleSubmit = async (payload) => {
     setError('');
@@ -499,7 +524,8 @@ function ConnectForm({ compact = false }) {
   if (compact) {
     return (
       <div className="max-w-lg mx-auto">
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email, _gotcha: gotcha }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+          <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
           <input
             type="email" placeholder="Enter your email" value={email}
             onChange={(e) => setEmail(e.target.value)} required
@@ -516,7 +542,8 @@ function ConnectForm({ compact = false }) {
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message }); }} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message, _gotcha: gotcha }); }} className="flex flex-col gap-5">
+      <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="eyebrow block mb-2">Name</label>
@@ -1393,13 +1420,14 @@ function PublishingPage({ setPage }) {
 /* Email signup — "Join the Movement". Routes to info@tbfentertainment.art. */
 function YGMovementForm() {
   const [email, setEmail] = useState('');
+  const [gotcha, setGotcha] = useState('');
   const [state, setState] = useState('idle'); // idle | sending | done | error
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
     try {
-      await submitLead({ type: 'Movement', email, source: "Young Gs landing page" }, 'info@tbfentertainment.art');
+      await submitLead({ type: 'Movement', email, source: "Young Gs landing page", _gotcha: gotcha }, 'info@tbfentertainment.art');
       setState('done');
     } catch { setState('error'); }
   };
@@ -1415,6 +1443,7 @@ function YGMovementForm() {
 
   return (
     <form onSubmit={submit} style={{ maxWidth:'520px', margin:'0 auto' }}>
+      <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="email" required placeholder="Enter your email" value={email}
@@ -1433,13 +1462,14 @@ function YGMovementForm() {
 function YGStreetTeamForm() {
   const [form, setForm] = useState({ name:'', email:'', city:'', help:'Post on social / BookTok', message:'' });
   const [state, setState] = useState('idle');
+  const [gotcha, setGotcha] = useState('');
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
     try {
-      await submitLead({ type: 'Street Team', ...form }, 'submissions@tbfentertainment.art');
+      await submitLead({ type: 'Street Team', ...form, _gotcha: gotcha }, 'info@tbfentertainment.art');
       setState('done');
     } catch { setState('error'); }
   };
@@ -1455,6 +1485,7 @@ function YGStreetTeamForm() {
 
   return (
     <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:'18px' }}>
+      <Honeypot value={gotcha} onChange={(e) => setGotcha(e.target.value)} />
       <div className="yg-grid-2col">
         <div>
           <label className="yg-label">Name</label>
