@@ -90,6 +90,7 @@ the kit always matches the live site (single source of truth).
 | Final book cover | `assets/YoungGs-vs-OldGs-cover.png` | `public/book-cover.png` | ⚠️ Pending — replace `public/book-cover.png` with the final approved cover, then re-export |
 | 3D book mockup | `assets/YoungGs-3D-mockup.png` | — | ⛔ To be supplied (see below) |
 | Author photo | `assets/author-tomtom.jpg` | `public/author-tomtom.jpg` | ⛔ To be supplied (see below) |
+| Official branded QR code | `assets/TBF_Official_QR.png` + `.svg` | `public/TBF_Official_QR.png` + `.svg` | ✅ Final |
 
 ### Still needed (image files only — cannot be generated from text)
 
@@ -101,3 +102,22 @@ the kit always matches the live site (single source of truth).
 3. **3D book mockup** → save as `docs/media-kit/assets/YoungGs-3D-mockup.png`.
 
 After dropping any of these in, run `./export-assets.sh` and rebuild.
+
+---
+
+## 10. Official branded QR code (brand standard)
+
+`public/TBF_Official_QR.png` (1720px, print) and `public/TBF_Official_QR.svg`
+(vector) are the **official TBF Entertainment QR code**. Use this exact code
+everywhere — every book (interior + back cover), the website, business cards,
+bookmarks, flyers, posters, media kits, author pages, and social graphics — so
+readers always recognize one branded mark.
+
+- **Destination:** https://tbfentertainment.art
+- **Error correction:** Level H (survives the center logo + print wear)
+- **Branding:** black modules on white, gold frame, centered TBF fedora badge
+- **Verified scannable** by decoding at 1500 / 800 / 500 / 350 / 250 px (all
+  return the URL) — reliable on Android & iPhone cameras and in print.
+- **Print placement:** keep a clear white quiet zone around it; print at
+  **≥ 0.8 in** square (it scans well down to ~0.6 in). Do not recolor the
+  modules or enlarge the center logo (breaks scannability).
