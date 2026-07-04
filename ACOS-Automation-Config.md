@@ -1,21 +1,22 @@
 # ⚙️ ACOS v1.0 — Automation Configuration (DRAFT — do not go live until Cecil confirms)
 
 **Base:** `A1 Colossal Operating System (ACOS)` — `appbJeQpEUFRV1Dim`
-**Status:** CEO-greenlit 2026-07-03 · **Not implemented live.** Awaiting Cecil's final trigger/settings.
-Build these in **Airtable → Automations**. Governing Principle #7: automate the process, never the judgment — both automations *recommend*; Cecil decides.
+**Status:** CEO-greenlit · **Settings CONFIRMED 2026-07-03.** Still **not implemented live** — Cecil confirms the final trigger inside Airtable before go-live.
+Build these in **Airtable → Automations**. Governing Principle #7: automate the process, never the judgment — every automation *recommends*; Cecil decides.
 
-> **Cecil must confirm before go-live (open settings):**
-> 1. **Morning Brief trigger time** (proposed **6:00 AM**) and **time zone** (proposed America/New_York).
-> 2. **End-of-Day trigger time** (proposed **6:00 PM**), same time zone.
-> 3. **Delivery:** create the Report record only, or **also email** Cecil a copy? If email, to `cecil.trimble15@gmail.com`?
-> 4. Weekend runs — every day, or weekdays only?
+> **✅ CONFIRMED SETTINGS (Cecil, 2026-07-03):**
+> 1. **Morning Brief:** **6:00 AM America/New_York.**
+> 2. **End-of-Day Report:** **6:00 PM America/New_York.**
+> 3. **Delivery:** **Create the Report record in ACOS only. No email yet.**
+> 4. **Weekends:** **Run every day.**
+> 5. Live implementation is a manual Airtable step; do not enable until Cecil clicks confirm inside Airtable.
 
 ---
 
 ## AUTOMATION 1 — Executive Morning Brief
 
 **Name:** `ACOS · Executive Morning Brief`
-**Trigger:** *At a scheduled time* → Daily → **6:00 AM** (pending confirmation), time zone as above.
+**Trigger:** *At a scheduled time* → Daily, **every day** → **6:00 AM America/New_York** (confirmed).
 
 **Action — Run a script** (Airtable scripting action). Paste this script; it reads the live tables and creates one Morning Brief record in `08 – Reports`.
 
@@ -82,7 +83,7 @@ await reports.createRecordAsync({
 ## AUTOMATION 2 — End-of-Day Report
 
 **Name:** `ACOS · End-of-Day Report`
-**Trigger:** *At a scheduled time* → Daily → **6:00 PM** (pending confirmation), same time zone.
+**Trigger:** *At a scheduled time* → Daily, **every day** → **6:00 PM America/New_York** (confirmed).
 
 **Action — Run a script:**
 
@@ -122,8 +123,61 @@ await reports.createRecordAsync({
 
 ---
 
-## OPTIONAL — CEO Approval Router (already scoped in 09 – Agent Build; not part of this greenlight)
-Trigger: *When a record matches conditions* on `03 – Tasks` where `Needs CEO Approval` = checked → Action: *Create record* in `04 – CEO Approval Queue` (CEO Decision = Pending, Final Status = Awaiting CEO). Enforces Governing Principle #6. Build after Cecil confirms.
+## AUTOMATION 3 — CEO Approval Router (config drafted 2026-07-03)
+
+**Name:** `ACOS · CEO Approval Router`
+**Governing rule (hard constraint):** the router **NEVER approves anything automatically.** It may only **route, notify, escalate, and log.** Every item it creates lands as **CEO Decision = Pending** for Cecil to decide by hand. Enforces Governing Principle #6.
+
+**Trigger:** *When a record matches conditions* → Table **`03 – Tasks`** → condition **`Needs CEO Approval` is checked** AND **`CEO Approval Status` is `Pending`**.
+*(Add a second identical automation on `02 – Projects` for `CEO Approval Required` checked, and a third on `10 – File Index` for `CEO Approval Needed` checked — same script, different source table.)*
+
+**Action — Run a script** (route + log; no approval, ever):
+
+```javascript
+// ACOS · CEO Approval Router — routes, notifies, escalates, logs. NEVER approves.
+const src = base.getTable('03 – Tasks');          // change per source table
+const queue = base.getTable('04 – CEO Approval Queue');
+const ops = base.getTable('06 – Operations Log');
+
+// The record that triggered the automation (from the trigger's output):
+const recId = input.config().recordId;            // map the trigger record id in the UI
+const r = await src.selectRecordAsync(recId, {fields:[
+  'Task Name','Company','Project','Owner','Task Details','Priority']});
+if (!r) return;
+
+// 1. Guard against duplicates: only route if not already queued for this item.
+const q = await queue.selectRecordsAsync({fields:['Approval Item','Final Status']});
+const already = q.records.some(x =>
+  x.getCellValueAsString('Approval Item') === r.getCellValueAsString('Task Name') &&
+  x.getCellValueAsString('Final Status') !== 'Closed');
+
+if (!already) {
+  // 2. ROUTE — create a Pending item. CEO decides; router never sets Approved.
+  await queue.createRecordAsync({
+    'Approval Item': r.getCellValueAsString('Task Name'),
+    'Submitted By': r.getCellValueAsString('Owner') || 'ACOS Router',
+    'Company': r.getCellValue('Company') ? {name: r.getCellValueAsString('Company')} : null,
+    'Project': r.getCellValueAsString('Project'),
+    'Decision Needed': r.getCellValueAsString('Task Details') || 'Review and decide.',
+    'Recommendation': 'Routed by ACOS. Awaiting CEO decision — router does not approve.',
+    'CEO Decision': {name: 'Pending'},
+    'Final Status': {name: 'Awaiting CEO'}
+  });
+  // 3. LOG — audit trail of the routing action.
+  await ops.createRecordAsync({
+    'Log Entry': `Routed for CEO approval: ${r.getCellValueAsString('Task Name')}`,
+    'Owner': 'ACOS Router',
+    'What Changed': 'Item flagged for approval was routed to 04 – CEO Approval Queue as Pending.',
+    'Notes': 'Router action only. No approval granted.'
+  });
+}
+```
+
+**NOTIFY / ESCALATE (optional add-on steps, no auto-approval):**
+- **Notify:** add a *Send email* action to Cecil (`cecil.trimble15@gmail.com`) — *"New item awaiting your approval in ACOS."* (Off for now, matching the reports' no-email setting; enable when Cecil wants.)
+- **Escalate:** add a second scheduled automation — daily, if any `04` item has `CEO Decision = Pending` older than **48 hours**, write an `11 – Executive Intelligence` entry (Risk Level = High) so stale approvals surface in the Morning Brief. Escalation = visibility only; still never approves.
+
+**What the router must never do:** set `CEO Decision` to Approved/Rejected/Send Back, change `Final Status` to Closed, or mark any deliverable final. Those are Cecil's alone.
 
 ---
 
