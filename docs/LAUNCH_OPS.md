@@ -10,6 +10,7 @@ Operational hub for launching **_Young G's vs. Old G's: The Takeover_** by O.G. 
 | [`ISBN_TRACKING.md`](./ISBN_TRACKING.md) | ISBN registry — one row per format, who owns it, where it's assigned. |
 | [`GOOGLE_WORKSPACE_SETUP.md`](./GOOGLE_WORKSPACE_SETUP.md) | Checklist to stand up `tbfentertainment.art` email + Drive. |
 | [`KDP_LAUNCH_CHECKLIST.md`](./KDP_LAUNCH_CHECKLIST.md) | Step-by-step Amazon KDP publish + 30-day launch checklist. |
+| [`LAUNCH_PROMOTION_PLAYBOOK.md`](./LAUNCH_PROMOTION_PLAYBOOK.md) | Wide distribution + promotion: 30-day promo calendar, all launch scripts (text/FB/IG/TikTok/review/street team/pitches), and the website buy-link checklist. Mirrors the Airtable trackers. |
 
 ## Website status (what's wired)
 
