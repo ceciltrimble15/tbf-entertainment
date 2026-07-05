@@ -14,6 +14,7 @@ Operational hub for launching **_Young G's vs. Old G's: The Takeover_** by O.G. 
 | [`AUTOMATION_RECIPES.md`](./AUTOMATION_RECIPES.md) | Build-ready specs for the first three base automations (Amazon Goes Live, Review Request Reminder, Launch Task Daily Digest). Design only — nothing built yet. |
 | [`AUTOMATION_NOTIFICATION_COPY.md`](./AUTOMATION_NOTIFICATION_COPY.md) | Ready-to-send message copy (email/SMS/Airtable notes) for the automations: Amazon live, review reminders, daily digest, CEO approval, sales milestones, weekly report. Copy only — nothing sent. |
 | [`BOOK2_WHITE_GIRL_VIC_SETUP.md`](./BOOK2_WHITE_GIRL_VIC_SETUP.md) | Book #2 production setup — manuscript/cover/ISBN/metadata/KDP/QA/launch/asset checklists, missing items, CEO approvals. Mirrors the Airtable rows + Drive production folder. Prep only. |
+| [`YOUNG_GS_WIDE_ROLLOUT.md`](./YOUNG_GS_WIDE_ROLLOUT.md) | Young G's wide (beyond-Amazon) rollout plan: per-platform requirements, ISBN decision list, metadata packet + description + keywords/categories, upload-readiness report, CEO approvals, launch order. Plan only — no uploads. |
 
 ## Website status (what's wired)
 
