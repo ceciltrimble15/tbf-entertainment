@@ -3,10 +3,31 @@
 Workspace prep for TBF Entertainment Publishing's second title. **Production Setup phase only** — nothing is
 finalized, submitted, or assigned.
 
-**Title:** White Girl Vic · **Publisher:** TBF Entertainment Publishing · **Author:** _TBD (CEO to confirm)_
+**Title:** White Girl Vic · **Publisher:** TBF Entertainment Publishing · **Author:** O.G. Tom Tom _(confirmed)_
 **Phase:** Production Setup · **Book #1 reference:** _Young G's vs. Old G's_ ($13.99 paperback, In Review on KDP)
 
 > **Guardrails (in force):** No ISBN assigned · Nothing uploaded to KDP · Manuscript not rewritten · No final cover files · Prepare the workspace only.
+
+---
+
+## White Girl Vic — CEO Intake Questions
+
+The only items Cecil must answer before production can move forward. Everything else stays parked until these are set.
+
+| # | Question | Answer |
+| --- | --- | --- |
+| 1 | **Final author / pen name** | ✅ O.G. Tom Tom _(confirmed)_ |
+| 2 | **Subtitle, if any** | _____ |
+| 3 | **Series or standalone?** (if series: name + book #) | _____ |
+| 4 | **Manuscript file location** (Drive link / who has it) | _____ |
+| 5 | **Cover direction** (concept, mood, references) | _____ |
+| 6 | **Target trim size** (Book #1 = 6×9) | _____ |
+| 7 | **Paperback price** (Book #1 = $13.99) | _____ |
+| 8 | **ISBN assignment decision** (owned Bowker vs KDP-free — _do not assign yet_) | _____ |
+| 9 | **Target release window** | _____ |
+| 10 | **Any sensitive content flags** (content warnings, legal/real-person concerns, explicit material) | _____ |
+
+Once answered, these feed the metadata worksheet, cover brief, ISBN row, and launch plan below.
 
 ## Where things live
 
@@ -94,7 +115,7 @@ Final Manuscript · Front Cover · Cover Wrap (print) · Interior PDF (6×9) · 
 ---
 
 ## Missing items (needed to move forward)
-- Author / pen name _(blank on the Book record)_
+- ~~Author / pen name~~ ✅ confirmed: O.G. Tom Tom
 - Subtitle / series (if any)
 - Book description + 7 keywords + 3 categories
 - Final manuscript file
@@ -104,7 +125,7 @@ Final Manuscript · Front Cover · Cover Wrap (print) · Interior PDF (6×9) · 
 - ISBN source decision
 
 ## CEO approval list (Cecil)
-1. Confirm **author / pen name**
+1. ~~Confirm **author / pen name**~~ ✅ O.G. Tom Tom
 2. Approve **ISBN source** (owned Bowker vs KDP-free) — _do not assign yet_
 3. Approve **paperback price**
 4. Approve **cover direction** (before final files are produced)
