@@ -18,6 +18,9 @@ Browser form  ──POST /api/submit──▶  Vercel serverless function (api/s
 - **Spam protection:** every form has a hidden honeypot field (`_gotcha`); the server silently drops any submission that fills it.
 - **Validation:** required fields on the client (`required`) plus server-side email validation.
 - **Consent:** each form shows consent/permission language before submit.
+- **Reply-To:** notification emails set `Reply-To` to the submitter, so hitting *Reply* in the inbox writes straight back to the person.
+- **Mailing list:** `Early Access` and `Movement` signups are added to the Brevo contact list (`BREVO_LIST_ID`) — idempotent, re-subscribing is safe.
+- **Error hygiene:** internal errors and env/secret values are never returned to the browser; failures are logged server-side and the client gets a generic, safe message.
 
 ## Forms on the site
 
@@ -45,10 +48,18 @@ Browser form  ──POST /api/submit──▶  Vercel serverless function (api/s
 | `AIRTABLE_TOKEN` | Airtable personal access token, scope `data.records:write` on the base |
 | `AIRTABLE_BASE_ID` | `appwnC45fLK2SCgzW` (TBF Entertainment Publishing Command Center) |
 | `AIRTABLE_SUBMISSIONS_TABLE` | Table name, e.g. `Website Submissions` |
-| `BREVO_API_KEY` | Brevo (Sendinblue) transactional email API key |
+| `BREVO_API_KEY` | Brevo (Sendinblue) transactional **+ contacts** API key |
 | `BREVO_SENDER` | Verified sender, e.g. `info@tbfentertainment.art` |
+| `BREVO_LIST_ID` | Numeric Brevo list id that Early Access / Movement signups join |
 
 Until these are set, `/api/submit` returns **503** and the form shows an error with a manual-email recovery link (no lead is silently lost, but automatic capture is off).
+
+## Brevo list setup (mailing list)
+1. Brevo → **Contacts → Lists → Create a list**, e.g. `TBF — Early Access / Launch`.
+2. Copy its **numeric list id** → set `BREVO_LIST_ID`.
+3. Brevo → **SMTP & API → API Keys** → create a key with contacts + transactional access → set `BREVO_API_KEY`.
+4. Brevo → **Senders** → verify `info@tbfentertainment.art` → set `BREVO_SENDER`.
+5. Optional attributes used: `FIRSTNAME`, `CITY` (created automatically if missing).
 
 ## Data capture — current state & recommended setup
 

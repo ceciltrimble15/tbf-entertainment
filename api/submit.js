@@ -3,22 +3,24 @@
 // The website forms POST JSON here. This function:
 //   1. Rejects non-POST and spam (honeypot).
 //   2. Validates required fields.
-//   3. Routes the notification to the correct TBF inbox by inquiry type.
+//   3. Routes the notification to the correct TBF inbox by inquiry type,
+//      with Reply-To set to the submitter so replies reach them directly.
 //   4. Stores the submission in Airtable (system of record).
-//   5. Sends an email notification via Brevo (transactional email).
+//   5. Subscribes Early Access / Movement signups to the Brevo contact list.
 //
-// It is intentionally dependency-free (uses global fetch, Node 18+ on Vercel).
+// Dependency-free (global fetch, Node 18+ on Vercel).
 //
-// Required environment variables (set in Vercel → Project → Settings → Env):
-//   AIRTABLE_TOKEN            Personal access token (data.records:write on the base)
-//   AIRTABLE_BASE_ID         e.g. appwnC45fLK2SCgzW (Publishing Command Center)
-//   AIRTABLE_SUBMISSIONS_TABLE   Table name, e.g. "Website Submissions"
-//   BREVO_API_KEY            Brevo (Sendinblue) transactional API key
-//   BREVO_SENDER             Verified sender, e.g. info@tbfentertainment.art
+// SECURITY: internal error details and env values are NEVER returned to the
+// client — failures are logged server-side and the client gets a generic
+// message. Nothing here touches DNS or MX records.
 //
-// If the storage/email env vars are absent the function returns 503 so the
-// front end shows an error (and its manual-email recovery link) instead of
-// silently dropping a lead. Nothing here touches DNS or MX records.
+// Required environment variables (Vercel → Project → Settings → Env):
+//   AIRTABLE_TOKEN              PAT with data.records:write on the base
+//   AIRTABLE_BASE_ID           e.g. appwnC45fLK2SCgzW
+//   AIRTABLE_SUBMISSIONS_TABLE Table name, e.g. "Website Submissions"
+//   BREVO_API_KEY              Brevo transactional + contacts API key
+//   BREVO_SENDER               Verified sender, e.g. info@tbfentertainment.art
+//   BREVO_LIST_ID              Numeric Brevo list id for Early Access subscribers
 
 const INBOX_ROUTES = {
   'General':      'info@tbfentertainment.art',
@@ -32,6 +34,8 @@ const INBOX_ROUTES = {
   'Street Team':  'submissions@tbfentertainment.art',
 };
 const DEFAULT_INBOX = 'info@tbfentertainment.art';
+// Types that represent a mailing-list opt-in.
+const SUBSCRIBE_TYPES = new Set(['Early Access', 'Movement']);
 
 const isEmail = (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
@@ -44,24 +48,45 @@ async function storeInAirtable(record) {
     headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ typecast: true, records: [{ fields: record }] }),
   });
-  if (!res.ok) throw new Error(`Airtable ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Airtable ${res.status}`);
   return true;
 }
 
-async function sendEmail({ to, subject, text }) {
+async function sendEmail({ to, replyTo, replyToName, subject, text }) {
   const { BREVO_API_KEY, BREVO_SENDER } = process.env;
   if (!BREVO_API_KEY || !BREVO_SENDER) return false;
+  const payload = {
+    sender: { email: BREVO_SENDER, name: 'TBF Entertainment Website' },
+    to: [{ email: to }],
+    subject,
+    textContent: text,
+  };
+  // Replies go straight back to the person who submitted the form.
+  if (isEmail(replyTo)) payload.replyTo = { email: replyTo, name: replyToName || replyTo };
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Brevo email ${res.status}`);
+  return true;
+}
+
+async function subscribeToBrevoList({ email, name, city }) {
+  const { BREVO_API_KEY, BREVO_LIST_ID } = process.env;
+  if (!BREVO_API_KEY || !BREVO_LIST_ID) return false;
+  const res = await fetch('https://api.brevo.com/v3/contacts', {
+    method: 'POST',
+    headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
-      sender: { email: BREVO_SENDER, name: 'TBF Entertainment Website' },
-      to: [{ email: to }],
-      subject,
-      textContent: text,
+      email,
+      listIds: [Number(BREVO_LIST_ID)],
+      updateEnabled: true, // idempotent: re-subscribing an existing contact is fine
+      attributes: { FIRSTNAME: name || '', CITY: city || '' },
     }),
   });
-  if (!res.ok) throw new Error(`Brevo ${res.status}: ${await res.text()}`);
+  // 201 created or 204 updated are both success. Duplicate is not an error.
+  if (!res.ok && res.status !== 204) throw new Error(`Brevo contact ${res.status}`);
   return true;
 }
 
@@ -77,19 +102,21 @@ export default async function handler(req, res) {
 
   // 2. Validation.
   const type = String(body.type || 'General');
-  if (!isEmail(body.email)) {
-    return res.status(400).json({ ok: false, error: 'A valid email is required.' });
+  const email = String(body.email || '').trim();
+  if (!isEmail(email)) {
+    return res.status(400).json({ ok: false, error: 'Please enter a valid email address.' });
   }
 
+  const name = String(body.name || '').trim();
   const inbox = INBOX_ROUTES[type] || DEFAULT_INBOX;
   const now = new Date().toISOString();
 
   const record = {
-    Name: body.name || '',
-    Email: body.email,
+    Name: name,
+    Email: email,
     Type: type,
     City: body.city || '',
-    Message: body.message || body.help || '',
+    Message: body.message || '',
     'How To Help': body.help || '',
     Source: body.source || 'tbfentertainment.art',
     'Routed To': inbox,
@@ -105,17 +132,26 @@ export default async function handler(req, res) {
     const stored = await storeInAirtable(record);
     const emailed = await sendEmail({
       to: inbox,
-      subject: `[TBF ${type}] ${body.name || body.email}`,
+      replyTo: email,
+      replyToName: name,
+      subject: `[TBF ${type}] ${name || email}`,
       text: `New ${type} submission from tbfentertainment.art:\n\n${summary}`,
     });
-
-    if (!stored && !emailed) {
-      // Backend not yet configured — do not claim success.
-      return res.status(503).json({ ok: false, error: 'Submission backend not configured.' });
+    let subscribed = false;
+    if (SUBSCRIBE_TYPES.has(type)) {
+      subscribed = await subscribeToBrevoList({ email, name, city: body.city });
     }
-    return res.status(200).json({ ok: true, stored, emailed, routedTo: inbox });
+
+    if (!stored && !emailed && !subscribed) {
+      // Backend not configured yet — do not claim success.
+      console.error('submit: no backend configured (Airtable/Brevo env missing)');
+      return res.status(503).json({ ok: false, error: 'Submissions are temporarily unavailable. Please email us directly.' });
+    }
+    return res.status(200).json({ ok: true, routedTo: inbox });
   } catch (err) {
-    return res.status(502).json({ ok: false, error: 'Delivery failed', detail: String(err.message || err) });
+    // Log the real cause server-side; return a safe generic message.
+    console.error('submit error:', err && err.message ? err.message : err);
+    return res.status(502).json({ ok: false, error: 'We could not deliver your message. Please email us directly.' });
   }
 }
 
