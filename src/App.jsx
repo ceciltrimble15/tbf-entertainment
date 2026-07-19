@@ -50,6 +50,13 @@ function recoveryMailto(payload) {
   return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+// Stable per-submission id so server-side retries don't create duplicate
+// Airtable rows. Generated once per form fill and reused on error retries.
+function genSubmissionId() {
+  try { if (globalThis.crypto && globalThis.crypto.randomUUID) return globalThis.crypto.randomUUID(); } catch { /* ignore */ }
+  return 'sid-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
 // Primary submission path: POST to the production backend.
 async function submitLead(payload) {
   const res = await fetch(FORM_ENDPOINT, {
@@ -459,12 +466,14 @@ function ConnectForm({ compact = false }) {
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
   const [errorHref, setErrorHref] = useState('');
+  const sidRef = useRef();
 
   const handleSubmit = async (payload) => {
     setError('');
     setSending(true);
+    const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead({ ...payload, _gotcha: hp });
+      await submitLead({ ...payload, _gotcha: hp, submissionId: sid });
       setSubmitted(true);
     } catch {
       setError('Something went wrong sending your message.');
@@ -1394,12 +1403,14 @@ function YGMovementForm() {
   const [email, setEmail] = useState('');
   const [hp, setHp] = useState(''); // honeypot
   const [state, setState] = useState('idle'); // idle | sending | done | error
+  const sidRef = useRef();
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
+    const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead({ type: 'Movement', email, source: 'Young Gs landing page', _gotcha: hp });
+      await submitLead({ type: 'Movement', email, source: 'Young Gs landing page', _gotcha: hp, submissionId: sid });
       setState('done');
     } catch { setState('error'); }
   };
@@ -1436,13 +1447,15 @@ function YGStreetTeamForm() {
   const [form, setForm] = useState({ name:'', email:'', city:'', help:'Post on social / BookTok', message:'' });
   const [hp, setHp] = useState(''); // honeypot
   const [state, setState] = useState('idle');
+  const sidRef = useRef();
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
+    const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead({ type: 'Street Team', ...form, _gotcha: hp });
+      await submitLead({ type: 'Street Team', ...form, _gotcha: hp, submissionId: sid });
       setState('done');
     } catch { setState('error'); }
   };

@@ -39,14 +39,37 @@ const SUBSCRIBE_TYPES = new Set(['Early Access', 'Movement']);
 
 const isEmail = (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-async function storeInAirtable(record) {
+async function storeInAirtable(record, submissionId) {
   const { AIRTABLE_TOKEN, AIRTABLE_BASE_ID, AIRTABLE_SUBMISSIONS_TABLE } = process.env;
   if (!AIRTABLE_TOKEN || !AIRTABLE_BASE_ID || !AIRTABLE_SUBMISSIONS_TABLE) return false;
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_SUBMISSIONS_TABLE)}`;
-  const res = await fetch(url, {
+  const base = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_SUBMISSIONS_TABLE)}`;
+  const auth = { Authorization: `Bearer ${AIRTABLE_TOKEN}` };
+
+  // Idempotency: if a row already exists for this submissionId, don't insert
+  // again. This makes retries safe when a later step (email) failed after the
+  // Airtable insert already succeeded. Fail-open if the lookup itself errors
+  // (e.g. the "Submission ID" field is missing) so we never block a lead.
+  if (submissionId) {
+    try {
+      const q = new URLSearchParams({
+        filterByFormula: `{Submission ID} = '${String(submissionId).replace(/'/g, "\\'")}'`,
+        maxRecords: '1',
+      });
+      const found = await fetch(`${base}?${q}`, { headers: auth });
+      if (found.ok) {
+        const data = await found.json();
+        if (data.records && data.records.length > 0) return true; // already stored
+      }
+    } catch (e) {
+      console.error('Airtable dedup lookup failed, proceeding to insert:', e && e.message);
+    }
+  }
+
+  const fields = submissionId ? { ...record, 'Submission ID': submissionId } : record;
+  const res = await fetch(base, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ typecast: true, records: [{ fields: record }] }),
+    headers: { ...auth, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ typecast: true, records: [{ fields }] }),
   });
   if (!res.ok) throw new Error(`Airtable ${res.status}`);
   return true;
@@ -72,9 +95,14 @@ async function sendEmail({ to, replyTo, replyToName, subject, text }) {
   return true;
 }
 
-async function subscribeToBrevoList({ email, name, city }) {
+async function subscribeToBrevoList({ email }) {
   const { BREVO_API_KEY, BREVO_LIST_ID } = process.env;
   if (!BREVO_API_KEY || !BREVO_LIST_ID) return false;
+  // Subscribe with email + list id only. Brevo does NOT auto-create contact
+  // attributes — passing FIRSTNAME/CITY before they exist in the account makes
+  // this call fail. The submitter's name/city are already captured in Airtable.
+  // To personalize campaigns later, create those attributes in Brevo
+  // (Contacts → Settings → Contact attributes) and add them back here.
   const res = await fetch('https://api.brevo.com/v3/contacts', {
     method: 'POST',
     headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -82,7 +110,6 @@ async function subscribeToBrevoList({ email, name, city }) {
       email,
       listIds: [Number(BREVO_LIST_ID)],
       updateEnabled: true, // idempotent: re-subscribing an existing contact is fine
-      attributes: { FIRSTNAME: name || '', CITY: city || '' },
     }),
   });
   // 201 created or 204 updated are both success. Duplicate is not an error.
@@ -108,6 +135,7 @@ export default async function handler(req, res) {
   }
 
   const name = String(body.name || '').trim();
+  const submissionId = body.submissionId ? String(body.submissionId).slice(0, 64) : '';
   const inbox = INBOX_ROUTES[type] || DEFAULT_INBOX;
   const now = new Date().toISOString();
 
@@ -129,7 +157,7 @@ export default async function handler(req, res) {
     .join('\n');
 
   try {
-    const stored = await storeInAirtable(record);
+    const stored = await storeInAirtable(record, submissionId);
     const emailed = await sendEmail({
       to: inbox,
       replyTo: email,
@@ -139,7 +167,7 @@ export default async function handler(req, res) {
     });
     let subscribed = false;
     if (SUBSCRIBE_TYPES.has(type)) {
-      subscribed = await subscribeToBrevoList({ email, name, city: body.city });
+      subscribed = await subscribeToBrevoList({ email });
     }
 
     if (!stored && !emailed && !subscribed) {

@@ -21,6 +21,7 @@ Browser form  ──POST /api/submit──▶  Vercel serverless function (api/s
 - **Reply-To:** notification emails set `Reply-To` to the submitter, so hitting *Reply* in the inbox writes straight back to the person.
 - **Mailing list:** `Early Access` and `Movement` signups are added to the Brevo contact list (`BREVO_LIST_ID`) — idempotent, re-subscribing is safe.
 - **Error hygiene:** internal errors and env/secret values are never returned to the browser; failures are logged server-side and the client gets a generic, safe message.
+- **Idempotency:** each form fill carries a stable `submissionId`; the server skips the Airtable insert if a row with that id already exists, so retrying after a partial failure (e.g. Airtable saved but email failed) never creates a duplicate row.
 
 ## Forms on the site
 
@@ -59,14 +60,14 @@ Until these are set, `/api/submit` returns **503** and the form shows an error w
 2. Copy its **numeric list id** → set `BREVO_LIST_ID`.
 3. Brevo → **SMTP & API → API Keys** → create a key with contacts + transactional access → set `BREVO_API_KEY`.
 4. Brevo → **Senders** → verify `info@tbfentertainment.art` → set `BREVO_SENDER`.
-5. Optional attributes used: `FIRSTNAME`, `CITY` (created automatically if missing).
+5. **Contact attributes:** the function subscribes with **email + list id only**. Brevo does **not** auto-create attributes — passing `FIRSTNAME`/`CITY` before they exist in the account makes the contacts call fail. The submitter's name/city are still captured in Airtable. To personalize campaigns later, create those attributes in Brevo (**Contacts → Settings → Contact attributes**) and add them back to `subscribeToBrevoList` in `api/submit.js`.
 
 ## Data capture — current state & recommended setup
 
 **Audit finding:** the Airtable base **"TBF Entertainment Publishing Command Center"** (`appwnC45fLK2SCgzW`) already exists with rich tables (`Books`, `Buyers`, `Street Team`, `Reviews`, `Outreach`, `Launch Tasks`, `ISBN Registry`, `Retail Links`, …). There is **no website form currently connected to it**, and **no single "website submissions / leads" inbox table**.
 
 **Recommended before launch:**
-1. Add a table **`Website Submissions`** to that base with fields: `Name` (text), `Email` (email), `Type` (single select), `City` (text), `Message` (long text), `How To Help` (text), `Source` (text), `Routed To` (text), `Submitted` (date/created time). `typecast: true` is used, so single-select options are created on the fly.
+1. Add a table **`Website Submissions`** to that base with fields: `Name` (text), `Email` (email), `Type` (single select), `City` (text), `Message` (long text), `How To Help` (text), `Source` (text), `Routed To` (text), `Submitted` (date/created time), **`Submission ID` (single line text)**. `typecast: true` is used, so single-select options are created on the fly. **`Submission ID` is required for retry de-duplication** — the server looks up this field before inserting, so a retried submission never creates a duplicate row. (If the field is missing the lookup fails open and inserts anyway, so add it.)
 2. Create an Airtable personal access token scoped to that base and set the env vars above.
 3. Optionally add automations in Airtable to fan a `Street Team` row into the existing `Street Team` table and buyers/subscribers into `Buyers`.
 4. For the mailing list specifically, connect **Brevo** (already the email provider here) as the list-of-record so subscribers flow into a Brevo contact list for campaigns.
