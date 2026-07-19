@@ -19,7 +19,8 @@ Browser form  ──POST /api/submit──▶  Vercel serverless function (api/s
 - **Validation:** required fields on the client (`required`) plus server-side email validation.
 - **Consent:** each form shows consent/permission language before submit.
 - **Reply-To:** notification emails set `Reply-To` to the submitter, so hitting *Reply* in the inbox writes straight back to the person.
-- **Mailing list:** `Early Access` and `Movement` signups are added to the Brevo contact list (`BREVO_LIST_ID`) — idempotent, re-subscribing is safe.
+- **Mailing list (consent-gated):** `Early Access` and `Movement` signups are added to the Brevo contact list (`BREVO_LIST_ID`) **only when the submitter checks the consent box**. Idempotent (re-subscribing is safe). Consent status is preserved in the Airtable `Source` field.
+- **Architecture:** shared brand-agnostic pipeline in `lib/submission.js`; TBF-specific config in `api/submit.js`. See `docs/a1-colossal-communications-standard.md` for the reuse pattern and `docs/tbf-form-routing-map.md` for routing.
 - **Error hygiene:** internal errors and env/secret values are never returned to the browser; failures are logged server-side and the client gets a generic, safe message.
 - **Idempotency:** each form fill carries a stable `submissionId`; the server skips the Airtable insert if a row with that id already exists, so retrying after a partial failure (e.g. Airtable saved but email failed) never creates a duplicate row.
 
@@ -47,7 +48,7 @@ Browser form  ──POST /api/submit──▶  Vercel serverless function (api/s
 | Var | Purpose |
 | --- | --- |
 | `AIRTABLE_TOKEN` | Airtable personal access token, scope `data.records:write` on the base |
-| `AIRTABLE_BASE_ID` | `appwnC45fLK2SCgzW` (TBF Entertainment Publishing Command Center) |
+| `AIRTABLE_BASE_ID` | `app6TQ7oSVSJADxC4` (**TBF Entertainment Operations** — the base the CEO created the `Website Submissions` table in) |
 | `AIRTABLE_SUBMISSIONS_TABLE` | Table name, e.g. `Website Submissions` |
 | `BREVO_API_KEY` | Brevo (Sendinblue) transactional **+ contacts** API key |
 | `BREVO_SENDER` | Verified sender, e.g. `info@tbfentertainment.art` |
@@ -64,7 +65,7 @@ Until these are set, `/api/submit` returns **503** and the form shows an error w
 
 ## Data capture — current state & recommended setup
 
-**Audit finding:** the Airtable base **"TBF Entertainment Publishing Command Center"** (`appwnC45fLK2SCgzW`) already exists with rich tables (`Books`, `Buyers`, `Street Team`, `Reviews`, `Outreach`, `Launch Tasks`, `ISBN Registry`, `Retail Links`, …). There is **no website form currently connected to it**, and **no single "website submissions / leads" inbox table**.
+**Base of record:** the `Website Submissions` table lives in the **TBF Entertainment Operations** base (`app6TQ7oSVSJADxC4`). (A separate, richer base — *TBF Entertainment Publishing Command Center*, `appwnC45fLK2SCgzW` — also exists for catalog/launch ops; the website backend writes to **Operations**, not that one.)
 
 **Recommended before launch:**
 1. Add a table **`Website Submissions`** to that base with fields: `Name` (text), `Email` (email), `Type` (single select), `City` (text), `Message` (long text), `How To Help` (text), `Source` (text), `Routed To` (text), `Submitted` (date/created time), **`Submission ID` (single line text)**. `typecast: true` is used, so single-select options are created on the fly. **`Submission ID` is required for retry de-duplication** — the server looks up this field before inserting, so a retried submission never creates a duplicate row. (If the field is missing the lookup fails open and inserts anyway, so add it.)

@@ -23,31 +23,15 @@ const BUY_LABEL = 'Buy on Amazon — $14.99';
 const FORM_ENDPOINT = '/api/submit';
 const CONTACT_EMAIL = 'info@tbfentertainment.art';
 
-// Inquiry type → destination inbox. The server re-validates this map
-// authoritatively; the client copy keeps the mailto recovery accurate.
-const INBOX_ROUTES = {
-  'General':       'info@tbfentertainment.art',
-  'Early Access':  'info@tbfentertainment.art',
-  'Movement':      'info@tbfentertainment.art',
-  'Media':         'media@tbfentertainment.art',
-  'Publishing':    'acquisitions@tbfentertainment.art',
-  'Partnership':   'acquisitions@tbfentertainment.art',
-  'Rights':        'rights@tbfentertainment.art',
-  'Artistry':      'info@tbfentertainment.art',
-  'Street Team':   'submissions@tbfentertainment.art',
-};
-
-const inboxFor = (type) => INBOX_ROUTES[type] || CONTACT_EMAIL;
-
-// Builds a manual-recovery mailto link (used only in error UI).
+// Manual-recovery mailto (error UI only). Always the public contact address —
+// internal routing inboxes are never exposed to visitors.
 function recoveryMailto(payload) {
-  const to = inboxFor(payload.type);
   const subject = `[TBF ${payload.type || 'Inquiry'}] ${payload.name || payload.email || ''}`.trim();
   const body = Object.entries(payload)
     .filter(([k, v]) => v && k !== '_gotcha')
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
-  return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // Stable per-submission id so server-side retries don't create duplicate
@@ -462,6 +446,7 @@ function ConnectForm({ compact = false }) {
   const [type, setType]     = useState('General');
   const [message, setMessage] = useState('');
   const [hp, setHp]         = useState(''); // honeypot — must stay empty
+  const [consent, setConsent] = useState(false); // mailing-list opt-in (compact)
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
@@ -500,7 +485,7 @@ function ConnectForm({ compact = false }) {
   if (compact) {
     return (
       <div className="max-w-lg mx-auto">
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email, consent }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
           <input
             type="email" placeholder="Enter your email" value={email}
             onChange={(e) => setEmail(e.target.value)} required
@@ -513,7 +498,10 @@ function ConnectForm({ compact = false }) {
           <input type="text" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} style={{ position:'absolute', left:'-9999px', width:'1px', height:'1px', opacity:0 }} aria-hidden="true" />
           <button type="submit" disabled={sending} className="btn-blue whitespace-nowrap" style={{ borderRadius: 0, padding: '1.1rem 2rem', fontSize: '0.78rem', opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Get Early Access'}</button>
         </form>
-        <p className="font-body text-xs mt-3" style={{ color: '#6B6862' }}>By subscribing you agree to receive email updates from TBF Entertainment. Unsubscribe anytime. We never sell your info.</p>
+        <label className="flex items-start gap-2 mt-3 cursor-pointer">
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-0.5" />
+          <span className="font-body text-xs" style={{ color: '#6B6862' }}>I agree to receive email updates from TBF Entertainment. Unsubscribe anytime. We never sell your info.</span>
+        </label>
         {error && <p className="font-body text-xs mt-2" style={{ color: '#E84040' }}>{error} <a href={errorHref} className="underline" style={{ color:'#1E90FF' }}>Email us directly →</a></p>}
       </div>
     );
@@ -1402,6 +1390,7 @@ function PublishingPage({ setPage }) {
 function YGMovementForm() {
   const [email, setEmail] = useState('');
   const [hp, setHp] = useState(''); // honeypot
+  const [consent, setConsent] = useState(false); // mailing-list opt-in
   const [state, setState] = useState('idle'); // idle | sending | done | error
   const sidRef = useRef();
 
@@ -1410,7 +1399,7 @@ function YGMovementForm() {
     setState('sending');
     const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead({ type: 'Movement', email, source: 'Young Gs landing page', _gotcha: hp, submissionId: sid });
+      await submitLead({ type: 'Movement', email, consent, source: 'Young Gs landing page', _gotcha: hp, submissionId: sid });
       setState('done');
     } catch { setState('error'); }
   };
@@ -1436,7 +1425,10 @@ function YGMovementForm() {
           {state === 'sending' ? 'Joining…' : 'Join the Movement'}
         </button>
       </div>
-      <p style={{ color:'#6B6862', fontSize:'0.72rem', marginTop:'12px' }}>By joining you agree to receive email updates from TBF Entertainment. Unsubscribe anytime.</p>
+      <label style={{ display:'flex', alignItems:'flex-start', gap:'8px', marginTop:'12px', cursor:'pointer' }}>
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required style={{ marginTop:'3px' }} />
+        <span style={{ color:'#6B6862', fontSize:'0.72rem' }}>I agree to receive email updates from TBF Entertainment. Unsubscribe anytime.</span>
+      </label>
       {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem', marginTop:'8px' }}>Something went wrong. <a href={recoveryMailto({ type:'Movement', email })} className="yg-gold" style={{ textDecoration:'underline' }}>Email us directly →</a></p>}
     </form>
   );
