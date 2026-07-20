@@ -15,6 +15,14 @@ Branch `claude/tbf-entertainment-launch-ojc062` · PR #3 · Status: **Preview te
 
 > Note: no ESLint is configured in this repo; syntax is validated via `node --check`. Adding a linter is an optional improvement.
 
+## A.1 Airtable live verification (2026-07-20) ✅
+Verified directly against the live base (resolved **by name**, not by trusting a typed ID):
+- Base **TBF Entertainment Operations** → `app6TQ7oSVSJADxC4` (name-resolved; matches config).
+- Table **Website Submissions** exists (`tblJRfC54ycBgjUKe`).
+- All 10 fields present, exact names: `Name`, `Email`, `Type`, `City`, `Message`, `How To Help`, `Source`, `Routed To`, `Submitted`, `Submission ID`.
+- `Submitted` = type **dateTime** (date + time). `Submission ID` = `singleLineText` (dedup filter works). `Type` = `singleSelect` (typecast-safe).
+- **Not verifiable from here:** the production Airtable *token's* scope/restriction — the MCP read connection is separate from the deployed token. Operator must confirm the token is `data.records:read` + `:write`, restricted to this base only.
+
 ### Backend test cases (all pass)
 1 General · 2 Early Access **with** consent (→ list 3) · 3 Early Access **without** consent (stored, **not** subscribed) · 4 Movement · 5 Media · 6 Publishing · 7 Partnership · 8 Rights · 9 Artistry · 10 Street Team · 11 Missing required field → 400 · 12 Invalid email → 400 · 13 Honeypot → dropped · 14 Unsupported type → 400 · 15 Duplicate retry → **no second row** · 16 Airtable failure → 502 **and no email sent** · 17 Email failure → still stored (200) · 18 Subscribe failure → still stored+emailed (200) · 19 No secrets/detail in responses · 20 Correct Amazon URL on all 7 buy buttons.
 
