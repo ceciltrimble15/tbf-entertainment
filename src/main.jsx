@@ -2,9 +2,15 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
+import { installA2PCompliance, renderLegalPageIfNeeded } from './a2pCompliance.js';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const legalPageRendered = renderLegalPageIfNeeded();
+
+if (!legalPageRendered) {
+  installA2PCompliance();
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
