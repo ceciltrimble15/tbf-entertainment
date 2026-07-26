@@ -9,7 +9,7 @@
     "build": "vite build",
     "build:standalone": "STANDALONE=1 vite build && cp dist-standalone/index.html standalone.html",
     "preview": "vite preview",
-    "test": "node test/submit.test.mjs"
+    "test": "node test/submit.test.mjs && node test/compliance.test.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
