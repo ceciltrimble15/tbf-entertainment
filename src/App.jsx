@@ -1,41 +1,55 @@
 import { useState, useEffect, useRef } from 'react';
 
 /* ─────────────────────────────────────────────────────────
+   BOOK / COMMERCE CONSTANTS
+───────────────────────────────────────────────────────── */
+// Single source of truth for the Young G's buy link. Every Buy button
+// uses this — update in one place if the ASIN ever changes.
+const AMAZON_BOOK_URL = 'https://www.amazon.com/dp/B0H962BXXC';
+const BUY_LABEL = 'Buy on Amazon — $14.99';
+
+/* ─────────────────────────────────────────────────────────
    LEAD CAPTURE CONFIG
 
-   The email-capture and contact forms POST here. Set
-   FORM_ENDPOINT to a Formspree form URL (https://formspree.io
-   → create form → copy the "https://formspree.io/f/xxxxxxxx"
-   endpoint) to capture leads directly into your inbox /
-   Airtable. Until it is set, forms fall back to opening the
-   visitor's email client addressed to CONTACT_EMAIL so no
-   lead is ever silently lost.
+   Forms POST to FORM_ENDPOINT, a real backend (the Vercel
+   serverless function at /api/submit). That function validates,
+   blocks spam via the honeypot, routes to the correct TBF inbox,
+   and stores the submission (Airtable). Setup + required env vars
+   are documented in docs/FORMS_BACKEND.md.
 
-   One-line setup is documented in docs/LAUNCH_OPS.md.
+   mailto is NOT the primary path — it is only offered as manual
+   recovery text if the backend call fails.
 ───────────────────────────────────────────────────────── */
-const FORM_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
+const FORM_ENDPOINT = '/api/submit';
 const CONTACT_EMAIL = 'info@tbfentertainment.art';
 
-async function submitLead(payload, to = CONTACT_EMAIL) {
-  if (FORM_ENDPOINT) {
-    const res = await fetch(FORM_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      // _to lets a configured Formspree/route forward to the right inbox.
-      body: JSON.stringify({ ...payload, _to: to }),
-    });
-    if (!res.ok) throw new Error('Submission failed');
-    return 'sent';
-  }
-  // No endpoint configured yet → don't lose the lead: open a pre-filled email
-  // addressed to the destination this form should route to.
+// Manual-recovery mailto (error UI only). Always the public contact address —
+// internal routing inboxes are never exposed to visitors.
+function recoveryMailto(payload) {
   const subject = `[TBF ${payload.type || 'Inquiry'}] ${payload.name || payload.email || ''}`.trim();
   const body = Object.entries(payload)
-    .filter(([, v]) => v)
+    .filter(([k, v]) => v && k !== '_gotcha')
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
-  window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  return 'mailto';
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+// Stable per-submission id so server-side retries don't create duplicate
+// Airtable rows. Generated once per form fill and reused on error retries.
+function genSubmissionId() {
+  try { if (globalThis.crypto && globalThis.crypto.randomUUID) return globalThis.crypto.randomUUID(); } catch { /* ignore */ }
+  return 'sid-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+// Primary submission path: POST to the production backend.
+async function submitLead(payload) {
+  const res = await fetch(FORM_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Submission failed');
+  return 'sent';
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -431,18 +445,24 @@ function ConnectForm({ compact = false }) {
   const [name, setName]     = useState('');
   const [type, setType]     = useState('General');
   const [message, setMessage] = useState('');
+  const [hp, setHp]         = useState(''); // honeypot — must stay empty
+  const [consent, setConsent] = useState(false); // mailing-list opt-in (compact)
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
+  const [errorHref, setErrorHref] = useState('');
+  const sidRef = useRef();
 
   const handleSubmit = async (payload) => {
     setError('');
     setSending(true);
+    const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead(payload);
+      await submitLead({ ...payload, _gotcha: hp, submissionId: sid });
       setSubmitted(true);
     } catch {
-      setError('Something went wrong. Please email ' + CONTACT_EMAIL + ' directly.');
+      setError('Something went wrong sending your message.');
+      setErrorHref(recoveryMailto(payload));
     } finally {
       setSending(false);
     }
@@ -465,7 +485,7 @@ function ConnectForm({ compact = false }) {
   if (compact) {
     return (
       <div className="max-w-lg mx-auto">
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type: 'Early Access', email, consent }); }} className="flex flex-col sm:flex-row gap-0" style={{ border: '1px solid rgba(30,144,255,0.3)' }}>
           <input
             type="email" placeholder="Enter your email" value={email}
             onChange={(e) => setEmail(e.target.value)} required
@@ -474,9 +494,15 @@ function ConnectForm({ compact = false }) {
             onFocus={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.6)'; }}
             onBlur={(e) => { e.target.parentElement.style.borderColor = 'rgba(30,144,255,0.3)'; }}
           />
+          {/* Honeypot — hidden from humans, bots fill it and get rejected server-side */}
+          <input type="text" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} style={{ position:'absolute', left:'-9999px', width:'1px', height:'1px', opacity:0 }} aria-hidden="true" />
           <button type="submit" disabled={sending} className="btn-blue whitespace-nowrap" style={{ borderRadius: 0, padding: '1.1rem 2rem', fontSize: '0.78rem', opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Get Early Access'}</button>
         </form>
-        {error && <p className="font-body text-xs mt-3" style={{ color: '#E84040' }}>{error}</p>}
+        <label className="flex items-start gap-2 mt-3 cursor-pointer">
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-0.5" />
+          <span className="font-body text-xs" style={{ color: '#6B6862' }}>I agree to receive email updates from TBF Entertainment. Unsubscribe anytime. We never sell your info.</span>
+        </label>
+        {error && <p className="font-body text-xs mt-2" style={{ color: '#E84040' }}>{error} <a href={errorHref} className="underline" style={{ color:'#1E90FF' }}>Email us directly →</a></p>}
       </div>
     );
   }
@@ -502,7 +528,8 @@ function ConnectForm({ compact = false }) {
           onFocus={onFocus} onBlur={onBlur}
         >
           <option value="General">General Inquiry</option>
-          <option value="Publishing">Publishing</option>
+          <option value="Publishing">Publishing / Acquisitions</option>
+          <option value="Rights">Rights &amp; Licensing</option>
           <option value="Artistry">Artistry / Artist Collaboration</option>
           <option value="Media">Media / Content</option>
           <option value="Partnership">Business Partnership</option>
@@ -515,7 +542,10 @@ function ConnectForm({ compact = false }) {
           className={`${baseInput} resize-none`} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
         />
       </div>
-      {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error}</p>}
+      {/* Honeypot — hidden from humans, bots fill it and get rejected server-side */}
+      <input type="text" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} style={{ position:'absolute', left:'-9999px', width:'1px', height:'1px', opacity:0 }} aria-hidden="true" />
+      <p className="font-body text-xs" style={{ color: '#6B6862' }}>By submitting, you agree to be contacted by TBF Entertainment about your inquiry. We never share your information.</p>
+      {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error} <a href={errorHref} className="underline" style={{ color:'#1E90FF' }}>Email us directly →</a></p>}
       <button type="submit" disabled={sending} className="btn-blue w-full md:w-auto" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Submit Inquiry'}</button>
     </form>
   );
@@ -688,13 +718,13 @@ function HomePage({ setPage }) {
 
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                  href={AMAZON_BOOK_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-blue"
                   style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 >
-                  Buy on Amazon <span style={{ fontSize: '0.85em' }}>↗</span>
+                  {BUY_LABEL} <span style={{ fontSize: '0.85em' }}>↗</span>
                 </a>
                 <button onClick={() => go('youngGs')} className="btn-outline-blue">
                   Full Details →
@@ -1057,12 +1087,12 @@ function PublishingPage({ setPage }) {
                     <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
                   </div>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={AMAZON_BOOK_URL}
                     target="_blank" rel="noopener noreferrer"
                     className="btn-blue w-full text-center"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    Get the Book ↗
+                    {BUY_LABEL} ↗
                   </a>
                   <button className="btn-outline-blue w-full" onClick={() => go('connect')}>Get First Access</button>
                 </div>
@@ -1161,13 +1191,13 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={AMAZON_BOOK_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-blue text-center"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    <span>Buy on Amazon KDP</span>
+                    <span>{BUY_LABEL}</span>
                     <span style={{ fontSize: '0.85em' }}>↗</span>
                   </a>
                   <button onClick={() => go('youngGs')} className="btn-outline-blue">View Book Page →</button>
@@ -1359,13 +1389,17 @@ function PublishingPage({ setPage }) {
 /* Email signup — "Join the Movement". Routes to info@tbfentertainment.art. */
 function YGMovementForm() {
   const [email, setEmail] = useState('');
+  const [hp, setHp] = useState(''); // honeypot
+  const [consent, setConsent] = useState(false); // mailing-list opt-in
   const [state, setState] = useState('idle'); // idle | sending | done | error
+  const sidRef = useRef();
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
+    const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead({ type: 'Movement', email, source: "Young Gs landing page" }, 'info@tbfentertainment.art');
+      await submitLead({ type: 'Movement', email, consent, source: 'Young Gs landing page', _gotcha: hp, submissionId: sid });
       setState('done');
     } catch { setState('error'); }
   };
@@ -1386,11 +1420,16 @@ function YGMovementForm() {
           type="email" required placeholder="Enter your email" value={email}
           onChange={(e) => setEmail(e.target.value)} className="yg-input" style={{ flex:1 }}
         />
+        <input type="text" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} style={{ position:'absolute', left:'-9999px', width:'1px', height:'1px', opacity:0 }} aria-hidden="true" />
         <button type="submit" disabled={state === 'sending'} className="yg-btn-gold" style={{ justifyContent:'center', padding:'14px 28px', opacity: state === 'sending' ? 0.6 : 1 }}>
           {state === 'sending' ? 'Joining…' : 'Join the Movement'}
         </button>
       </div>
-      {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem', marginTop:'10px' }}>Something went wrong — email info@tbfentertainment.art directly.</p>}
+      <label style={{ display:'flex', alignItems:'flex-start', gap:'8px', marginTop:'12px', cursor:'pointer' }}>
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required style={{ marginTop:'3px' }} />
+        <span style={{ color:'#6B6862', fontSize:'0.72rem' }}>I agree to receive email updates from TBF Entertainment. Unsubscribe anytime.</span>
+      </label>
+      {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem', marginTop:'8px' }}>Something went wrong. <a href={recoveryMailto({ type:'Movement', email })} className="yg-gold" style={{ textDecoration:'underline' }}>Email us directly →</a></p>}
     </form>
   );
 }
@@ -1398,14 +1437,17 @@ function YGMovementForm() {
 /* Street Team signup. Routes to submissions@tbfentertainment.art. */
 function YGStreetTeamForm() {
   const [form, setForm] = useState({ name:'', email:'', city:'', help:'Post on social / BookTok', message:'' });
+  const [hp, setHp] = useState(''); // honeypot
   const [state, setState] = useState('idle');
+  const sidRef = useRef();
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
     setState('sending');
+    const sid = sidRef.current || (sidRef.current = genSubmissionId());
     try {
-      await submitLead({ type: 'Street Team', ...form }, 'submissions@tbfentertainment.art');
+      await submitLead({ type: 'Street Team', ...form, _gotcha: hp, submissionId: sid });
       setState('done');
     } catch { setState('error'); }
   };
@@ -1451,7 +1493,10 @@ function YGStreetTeamForm() {
         <label className="yg-label">Anything else?</label>
         <textarea rows={4} value={form.message} onChange={set('message')} className="yg-input" style={{ resize:'vertical' }} placeholder="Tell us how you're connected to the work." />
       </div>
-      {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem' }}>Something went wrong — email submissions@tbfentertainment.art directly.</p>}
+      {/* Honeypot */}
+      <input type="text" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} style={{ position:'absolute', left:'-9999px', width:'1px', height:'1px', opacity:0 }} aria-hidden="true" />
+      <p style={{ color:'#6B6862', fontSize:'0.72rem' }}>By signing up you agree to be contacted by TBF Entertainment about the street team. We never share your info.</p>
+      {state === 'error' && <p style={{ color:'#E84040', fontSize:'0.8rem' }}>Something went wrong. <a href={recoveryMailto({ type:'Street Team', ...form })} className="yg-gold" style={{ textDecoration:'underline' }}>Email us directly →</a></p>}
       <button type="submit" disabled={state === 'sending'} className="yg-btn-gold" style={{ alignSelf:'flex-start', padding:'15px 38px', opacity: state === 'sending' ? 0.6 : 1 }}>
         {state === 'sending' ? 'Submitting…' : 'Join the Street Team'}
       </button>
@@ -1585,7 +1630,7 @@ function YoungGsPage({ setPage }) {
                   Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
                 </p>
                 <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
-                  <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
+                  <a href={AMAZON_BOOK_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">{BUY_LABEL} ↗</a>
                   <button onClick={() => go('connect')} className="yg-btn-out">Request ARC Copy</button>
                 </div>
               </Reveal>
@@ -1665,7 +1710,7 @@ function YoungGsPage({ setPage }) {
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'28px' }}>
                 Cincinnati, Ohio — a city that rarely gets its story told on its own terms. Until now.
               </p>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
+              <a href={AMAZON_BOOK_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">{BUY_LABEL} ↗</a>
             </Reveal>
           </div>
           <Reveal delay={120}>
@@ -1858,7 +1903,7 @@ function YoungGsPage({ setPage }) {
               ))}
             </div>
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
+              <a href={AMAZON_BOOK_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>{BUY_LABEL} ↗</a>
               <button onClick={() => go('connect')} className="yg-btn-out" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Request ARC Copy</button>
             </div>
             <div style={{ marginTop:'40px', paddingTop:'28px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
@@ -2148,13 +2193,13 @@ function BooksPage({ setPage }) {
                     View Book Page →
                   </button>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom"
+                    href={AMAZON_BOOK_URL}
                     target="_blank" rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="btn-outline-blue"
                     style={{ textDecoration: 'none' }}
                   >
-                    Buy on Amazon ↗
+                    {BUY_LABEL} ↗
                   </a>
                 </div>
               </div>
