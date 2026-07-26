@@ -1,20 +1,5 @@
 // TBF Entertainment — form submission endpoint (Vercel serverless function).
-//
-// Thin brand-config layer over the shared A1 Colossal pipeline
-// (../lib/submission.js). Everything TBF-specific lives here; the reusable
-// logic is in the shared module. A1 Creative Agency and A/1 Suppliers would
-// each ship their OWN copy of this file (own routes, sender, list, env, base,
-// Vercel project) — no customer data, credentials, or lists are shared.
-//
-// Environment variables (Vercel → Project → Settings → Environment Variables,
-// Production + Preview; values never live in code):
-//   AIRTABLE_TOKEN              PAT, scope data.records:read + data.records:write,
-//                               restricted to the TBF Entertainment Operations base
-//   AIRTABLE_BASE_ID            app6TQ7oSVSJADxC4  (TBF Entertainment Operations)
-//   AIRTABLE_SUBMISSIONS_TABLE  Website Submissions
-//   BREVO_API_KEY               TBF Brevo transactional + contacts key
-//   BREVO_SENDER                info@tbfentertainment.art  (verified sender)
-//   BREVO_LIST_ID               3  (TBF — Early Access / Launch)
+// Environment variables are configured in Vercel and never committed.
 
 import { handleSubmission } from '../lib/submission.js';
 
@@ -25,24 +10,18 @@ const TBF_BRAND = {
   senderName: 'TBF Entertainment Website',
   defaultSource: 'tbfentertainment.art',
   safeError: 'We could not process your message right now. Please email info@tbfentertainment.art directly.',
-
-  // Inquiry type → destination inbox (authoritative, server-side).
   routes: {
-    'General':      'info@tbfentertainment.art',
+    General: 'info@tbfentertainment.art',
     'Early Access': 'info@tbfentertainment.art',
-    'Movement':     'info@tbfentertainment.art',
-    'Artistry':     'info@tbfentertainment.art',
-    'Media':        'media@tbfentertainment.art',
-    'Publishing':   'acquisitions@tbfentertainment.art',
-    'Partnership':  'acquisitions@tbfentertainment.art',
-    'Rights':       'rights@tbfentertainment.art',
-    'Street Team':  'submissions@tbfentertainment.art',
+    Movement: 'info@tbfentertainment.art',
+    Artistry: 'info@tbfentertainment.art',
+    Media: 'media@tbfentertainment.art',
+    Publishing: 'acquisitions@tbfentertainment.art',
+    Partnership: 'acquisitions@tbfentertainment.art',
+    Rights: 'rights@tbfentertainment.art',
+    'Street Team': 'submissions@tbfentertainment.art',
   },
-
-  // Only these types may join the mailing list, and only WITH consent.
   subscribeTypes: new Set(['Early Access', 'Movement']),
-
-  // Read env at request time (never captured at module load).
   env: () => ({
     airtable: {
       token: process.env.AIRTABLE_TOKEN,
@@ -57,6 +36,29 @@ const TBF_BRAND = {
   }),
 };
 
+function parseBody(req) {
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
+  return req.body || {};
+}
+
 export default function handler(req, res) {
+  const body = parseBody(req);
+  if (body.phone || body.smsConsent) {
+    const smsRecord = [
+      '',
+      '--- SMS CONSENT RECORD ---',
+      `Mobile Phone: ${String(body.phone || '')}`,
+      `SMS Consent: ${body.smsConsent === true ? 'YES' : 'NO'}`,
+      `Consent Timestamp: ${String(body.consentTimestamp || '')}`,
+      `Consent Language: ${String(body.smsConsentText || '')}`,
+      `Page URL: ${String(body.pageUrl || '')}`,
+      `User Agent: ${String(body.userAgent || '')}`,
+    ].join('\n');
+    body.message = `${String(body.message || '')}${smsRecord}`.slice(0, 5000);
+    body.source = `${String(body.source || TBF_BRAND.defaultSource)} | SMS consent: ${body.smsConsent === true ? 'yes' : 'no'}`.slice(0, 200);
+    req.body = body;
+  }
   return handleSubmission(req, res, TBF_BRAND);
 }
