@@ -443,6 +443,8 @@ function ConnectForm({ compact = false }) {
   const [name, setName]     = useState('');
   const [type, setType]     = useState('General');
   const [message, setMessage] = useState('');
+  const [phone, setPhone]     = useState('');
+  const [smsConsent, setSmsConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
@@ -506,6 +508,14 @@ function ConnectForm({ compact = false }) {
         </div>
       </div>
       <div>
+        <label className="eyebrow block mb-2">Phone (optional)</label>
+        <input
+          type="tel" placeholder="Your phone number" value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+        />
+      </div>
+      <div>
         <label className="eyebrow block mb-2">Inquiry Type</label>
         <select
           value={type} onChange={(e) => setType(e.target.value)}
@@ -526,6 +536,21 @@ function ConnectForm({ compact = false }) {
           placeholder="Tell us about your inquiry..." value={message} onChange={(e) => setMessage(e.target.value)} required rows={5}
           className={`${baseInput} resize-none`} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
         />
+      </div>
+      <div className="flex items-start gap-3" style={{ marginTop: '0.25rem' }}>
+        <input
+          type="checkbox"
+          id="smsConsent"
+          checked={smsConsent}
+          onChange={(e) => setSmsConsent(e.target.checked)}
+          style={{ marginTop: '3px', accentColor: '#1E90FF', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+        />
+        <label htmlFor="smsConsent" className="font-body text-xs cursor-pointer" style={{ color: '#A0A0A0', lineHeight: '1.5' }}>
+          I agree to receive SMS text messages from TBF Entertainment at the number provided. Message frequency varies. Message and data rates may apply. Reply <strong style={{ color: '#E0E0E0' }}>STOP</strong> to unsubscribe at any time. Reply <strong style={{ color: '#E0E0E0' }}>HELP</strong> for help. See our{' '}
+          <a href="/privacy-policy" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Privacy Policy</a> and{' '}
+          <a href="/terms" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Terms of Service</a>.
+          {' '}Mobile information will not be shared with third parties for marketing purposes.
+        </label>
       </div>
       {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error}</p>}
       <button type="submit" disabled={sending} className="btn-blue w-full md:w-auto" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Submit Inquiry'}</button>
