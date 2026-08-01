@@ -323,9 +323,21 @@ function Footer({ setPage }) {
           <p className="font-body text-xs text-tbf-silver-dim tracking-wider">
             © {new Date().getFullYear()} TBF Entertainment. All rights reserved.
           </p>
-          <p className="font-body text-xs text-tbf-silver-dim tracking-wider">
-            tbfentertainment.art
-          </p>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => go('privacyPolicy')}
+              className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-tbf-silver-dim text-xs">|</span>
+            <button
+              onClick={() => go('terms')}
+              className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
+            >
+              Terms of Service
+            </button>
+          </div>
         </div>
       </div>
     </footer>
@@ -2269,6 +2281,128 @@ function ConnectPage() {
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────
+   A2P COMPLIANCE PAGES
+   Required for Twilio A2P 10DLC brand registration.
+   These pages satisfy carrier requirements for:
+   - Privacy Policy (SMS data handling disclosure)
+   - Terms of Service (opt-in/opt-out conditions)
+───────────────────────────────────────────────────────── */
+
+function ComplianceLayout({ title, children, setPage }) {
+  return (
+    <div className="min-h-screen" style={{ background: '#0A0A0A', color: '#E8E8E8' }}>
+      <div className="max-w-3xl mx-auto px-6 py-20">
+        <button
+          onClick={() => setPage('home')}
+          className="font-body text-sm text-tbf-silver-dim hover:text-white mb-10 flex items-center gap-2 transition-colors duration-200"
+        >
+          ← Back to Home
+        </button>
+        <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">{title}</h1>
+        <p className="font-body text-sm text-tbf-silver-dim mb-10">Effective Date: August 1, 2026</p>
+        <div className="font-body text-sm text-tbf-silver leading-relaxed space-y-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PrivacyPolicyPage({ setPage }) {
+  return (
+    <ComplianceLayout title="Privacy Policy" setPage={setPage}>
+      <p>TBF Entertainment LLC ("we," "us," or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you visit tbfentertainment.art or interact with our publishing, artistry, and media divisions.</p>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">1. Information We Collect</h2>
+        <p>We collect personal information that you voluntarily provide when you submit an inquiry through our Connect form, sign up for early access or release updates, or opt-in to receive SMS communications. This may include your name, email address, phone number, and any other details you choose to provide.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">2. How We Use Your Information</h2>
+        <p>We use the information we collect to respond to your inquiries regarding publishing, artistry, or media partnerships; send promotional updates and new release announcements; and provide customer support.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">3. SMS Communications and Mobile Data</h2>
+        <p>If you opt-in to receive SMS messages from TBF Entertainment, we will use your phone number to send marketing and informational updates.</p>
+        <p className="mt-3 font-semibold text-white">No Mobile Information Sharing: Mobile information and consent data will not be shared with, sold to, or rented to third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent will be kept strictly confidential.</p>
+        <p className="mt-3">Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe at any time. Reply HELP for help. For support, contact info@tbfentertainment.art or call 513-866-3832.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">4. Third-Party Links</h2>
+        <p>Our website contains links to third-party platforms such as Amazon KDP. We are not responsible for the privacy practices or content of these external sites.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">5. Your Rights</h2>
+        <p>You have the right to request access to, correction of, or deletion of your personal data. To exercise these rights, contact us at:</p>
+        <p className="mt-3">Email: <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a></p>
+        <p>Phone: 513-866-3832</p>
+        <p>Address: 9435 Waterstone Blvd Ste 140, Cincinnati, OH 45249</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">6. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page with an updated effective date.</p>
+      </div>
+    </ComplianceLayout>
+  );
+}
+
+function TermsPage({ setPage }) {
+  return (
+    <ComplianceLayout title="Terms of Service" setPage={setPage}>
+      <p>These Terms of Service ("Terms") govern your use of the TBF Entertainment website (tbfentertainment.art) and any related services provided by TBF Entertainment LLC ("we," "us," or "our"). By accessing or using our site, you agree to be bound by these Terms.</p>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">1. Use of the Website</h2>
+        <p>You agree to use this website only for lawful purposes and in a manner that does not infringe the rights of others. You may not use this site to transmit any unsolicited commercial communications or to engage in any conduct that restricts or inhibits anyone's use or enjoyment of the site.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">2. SMS Messaging Terms</h2>
+        <p>By providing your phone number and checking the SMS consent box on our Connect form, you expressly consent to receive recurring automated marketing text messages from TBF Entertainment at the number provided. Consent is not a condition of purchase.</p>
+        <p className="mt-3">Message frequency varies. Message and data rates may apply.</p>
+        <p className="mt-3 font-semibold text-white">To opt out: Reply STOP to any message. You will receive a confirmation and no further messages will be sent.</p>
+        <p className="mt-3 font-semibold text-white">For help: Reply HELP or contact info@tbfentertainment.art or call 513-866-3832.</p>
+        <p className="mt-3">Supported carriers are not liable for delayed or undelivered messages.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">3. Intellectual Property</h2>
+        <p>All content on this website — including text, graphics, logos, images, and audio clips — is the property of TBF Entertainment LLC and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or create derivative works without our express written permission.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">4. Disclaimer of Warranties</h2>
+        <p>This website is provided "as is" without warranties of any kind, either express or implied. We do not warrant that the site will be uninterrupted, error-free, or free of viruses or other harmful components.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">5. Limitation of Liability</h2>
+        <p>To the fullest extent permitted by law, TBF Entertainment LLC shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of this website or our services.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">6. Governing Law</h2>
+        <p>These Terms are governed by the laws of the State of Ohio, without regard to its conflict of law provisions. Any disputes shall be resolved in the courts of Hamilton County, Ohio.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">7. Contact</h2>
+        <p>If you have any questions about these Terms, please contact us:</p>
+        <p className="mt-3">Email: <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a></p>
+        <p>Phone: 513-866-3832</p>
+        <p>Address: 9435 Waterstone Blvd Ste 140, Cincinnati, OH 45249</p>
+      </div>
+    </ComplianceLayout>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────
    APP ROOT — URL-based routing (no router dependency)
 
@@ -2279,13 +2413,15 @@ function ConnectPage() {
    vercel.json so direct hits on /young-gs resolve.
 ───────────────────────────────────────────────────────── */
 const PATHS = {
-  home:       '/',
-  books:      '/books',
-  publishing: '/publishing',
-  artistry:   '/artistry',
-  media:      '/media',
-  connect:    '/connect',
-  youngGs:    '/young-gs',
+  home:          '/',
+  books:         '/books',
+  publishing:    '/publishing',
+  artistry:      '/artistry',
+  media:         '/media',
+  connect:       '/connect',
+  youngGs:       '/young-gs',
+  privacyPolicy: '/privacy-policy',
+  terms:         '/terms',
 };
 
 const pageFromPath = (path) => {
@@ -2326,6 +2462,8 @@ export default function App() {
       case 'artistry':   return <ArtistryPage    setPage={setPage} />;
       case 'media':      return <MediaPage        setPage={setPage} />;
       case 'connect':    return <ConnectPage />;
+      case 'privacyPolicy': return <PrivacyPolicyPage setPage={setPage} />;
+      case 'terms':         return <TermsPage setPage={setPage} />;
       default:           return <HomePage         setPage={setPage} />;
     }
   };
