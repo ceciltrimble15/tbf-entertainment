@@ -16,6 +16,29 @@ import { useState, useEffect, useRef } from 'react';
 const FORM_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
 const CONTACT_EMAIL = 'info@tbfentertainment.art';
 
+/* ─────────────────────────────────────────────────────────
+   FEATURED BOOK — SINGLE SOURCE OF TRUTH
+
+   Every title, subtitle, price, cover and purchase link on the
+   site reads from this frozen object. Update the book here and
+   it updates everywhere. The cover is a versioned filename so
+   browsers and the CDN cannot serve a stale copy.
+───────────────────────────────────────────────────────── */
+const FEATURED_BOOK = Object.freeze({
+  title: 'Young Gs vs Old Gs',
+  subtitle: 'A Street Code Story of Loyalty, Power, & Survival',
+  author: 'O.G. Tom Tom',
+  format: 'Paperback',
+  price: '$14.99',
+  asin: 'B0H962BXXC',
+  amazonUrl: 'https://www.amazon.com/dp/B0H962BXXC',
+  coverSrc: '/young-gs-vs-old-gs-approved-2026.jpg',
+  coverAlt:
+    'Young Gs vs Old Gs: A Street Code Story of Loyalty, Power, and Survival by O.G. Tom Tom',
+});
+
+const BUY_LABEL = `Buy on Amazon — ${FEATURED_BOOK.price}`;
+
 async function submitLead(payload, to = CONTACT_EMAIL) {
   if (FORM_ENDPOINT) {
     const res = await fetch(FORM_ENDPOINT, {
@@ -335,7 +358,14 @@ function Footer({ setPage }) {
               onClick={() => go('terms')}
               className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
             >
-              Terms of Service
+              Terms &amp; Conditions
+            </button>
+            <span className="text-tbf-silver-dim text-xs">|</span>
+            <button
+              onClick={() => go('smsUpdates')}
+              className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
+            >
+              SMS Updates
             </button>
           </div>
         </div>
@@ -348,30 +378,37 @@ function Footer({ setPage }) {
    BOOK COVER — uses actual cover art
 ───────────────────────────────────────────────────────── */
 function BookCover({ size = 'lg' }) {
-  // +40% dominance on the home/publishing anchor
-  const w = size === 'lg' ? '310px' : '220px';
-  const h = size === 'lg' ? '420px' : '300px';
+  const dimensions =
+    size === 'lg'
+      ? { width: '310px', height: '465px' }
+      : { width: '220px', height: '330px' };
 
   return (
     <div
       className="relative flex-shrink-0 overflow-hidden"
       style={{
-        width: w,
-        height: h,
-        boxShadow: '8px 16px 56px rgba(0,0,0,0.85), 0 0 40px rgba(30,144,255,0.15)',
-        border: '1px solid rgba(30,144,255,0.15)',
+        ...dimensions,
+        background: '#050505',
+        boxShadow:
+          '8px 16px 56px rgba(0,0,0,0.85), 0 0 40px rgba(30,144,255,0.15)',
+        border: '1px solid rgba(30,144,255,0.18)',
       }}
     >
       <img
-        src="/book-cover.png"
-        alt="Young Gs vs Old Gs: The Takeover — TBF Entertainment"
+        src={FEATURED_BOOK.coverSrc}
+        alt={FEATURED_BOOK.coverAlt}
+        width="1200"
+        height="1800"
+        loading="eager"
+        decoding="async"
         draggable={false}
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'top center',
+          objectFit: 'contain',
+          objectPosition: 'center',
           display: 'block',
+          background: '#050505',
         }}
       />
     </div>
@@ -444,7 +481,6 @@ function ConnectForm({ compact = false }) {
   const [type, setType]     = useState('General');
   const [message, setMessage] = useState('');
   const [phone, setPhone]     = useState('');
-  const [smsConsent, setSmsConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError]   = useState('');
@@ -496,7 +532,7 @@ function ConnectForm({ compact = false }) {
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message }); }} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, phone, message }); }} className="flex flex-col gap-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="eyebrow block mb-2">Name</label>
@@ -514,6 +550,10 @@ function ConnectForm({ compact = false }) {
           onChange={(e) => setPhone(e.target.value)}
           className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
         />
+        <p className="font-body" style={{ fontSize: '0.68rem', color: '#7A7A7A', marginTop: '6px' }}>
+          A phone number here is only used to respond to your inquiry. To receive text updates, opt in separately on our{' '}
+          <a href="/sms-updates" style={{ color: '#1E90FF', textDecoration: 'underline' }}>SMS Updates</a> page.
+        </p>
       </div>
       <div>
         <label className="eyebrow block mb-2">Inquiry Type</label>
@@ -537,23 +577,131 @@ function ConnectForm({ compact = false }) {
           className={`${baseInput} resize-none`} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
         />
       </div>
+      {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error}</p>}
+      <button type="submit" disabled={sending} className="btn-blue w-full md:w-auto" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Submit Inquiry'}</button>
+    </form>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SMS OPT-IN — standalone consent form (A2P / Twilio)
+
+   Kept deliberately separate from purchasing, inquiries and
+   policy acceptance. The consent checkbox is unchecked by
+   default; the phone number is required ONLY when the user
+   actively opts in. Declining SMS still lets the user do
+   everything else on the site. The exact consent language is
+   versioned so Airtable can store which wording was agreed to.
+───────────────────────────────────────────────────────── */
+const SMS_CONSENT_VERSION = '2026-08-01';
+const SMS_CONSENT_TEXT =
+  'I agree to receive recurring promotional and informational text messages from TBF Entertainment at the mobile number provided. Up to 4 messages per month. Message and data rates may apply. Consent is not a condition of purchase. Reply STOP to unsubscribe or HELP for assistance. View our Privacy Policy and Terms and Conditions.';
+
+function SmsOptInForm() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName]   = useState('');
+  const [email, setEmail]         = useState('');
+  const [phone, setPhone]         = useState('');
+  const [smsConsent, setSmsConsent] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending]     = useState(false);
+  const [error, setError]         = useState('');
+
+  const inputStyle = { border: '1px solid #2B2B2B', fontSize: '0.875rem', background: 'transparent' };
+  const onFocus = (e) => { e.target.style.borderColor = 'rgba(30,144,255,0.5)'; };
+  const onBlur  = (e) => { e.target.style.borderColor = '#2B2B2B'; };
+  const baseInput = 'w-full font-body text-sm px-5 py-4 text-white placeholder-tbf-silver-dim outline-none transition-all duration-200';
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    // Phone is required only when the user has actively opted in.
+    if (smsConsent && !phone.trim()) {
+      setError('A mobile number is required to receive text messages.');
+      return;
+    }
+    setSending(true);
+    try {
+      await submitLead({
+        type: 'SMS Opt-In',
+        formType: 'SMS Opt-In',
+        firstName,
+        lastName,
+        email,
+        phone,
+        smsConsent: smsConsent ? 'Yes' : 'No',
+        smsConsentTimestamp: new Date().toISOString(),
+        smsConsentSource: typeof window !== 'undefined' ? window.location.origin + '/sms-updates' : '/sms-updates',
+        consentLanguageVersion: SMS_CONSENT_VERSION,
+        consentLanguage: SMS_CONSENT_TEXT,
+      });
+      setSubmitted(true);
+    } catch {
+      setError('Something went wrong. Please email ' + CONTACT_EMAIL + ' directly.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="p-8 text-center" style={{ background: 'rgba(30,144,255,0.06)', border: '1px solid rgba(30,144,255,0.25)' }}>
+        <div className="font-display font-bold uppercase text-tbf-blue text-xl mb-2">You're on the list.</div>
+        <p className="font-body text-tbf-silver text-sm">
+          {smsConsent
+            ? 'Thanks for opting in. Reply STOP any time to unsubscribe, or HELP for assistance.'
+            : 'Thanks — we\'ve recorded your details. You did not opt in to text messages.'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label className="eyebrow block mb-2">First Name</label>
+          <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+        </div>
+        <div>
+          <label className="eyebrow block mb-2">Last Name</label>
+          <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+        </div>
+      </div>
+      <div>
+        <label className="eyebrow block mb-2">Email</label>
+        <input type="email" placeholder="Your email" value={email} onChange={(e) => setEmail(e.target.value)} required className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+      </div>
+      <div>
+        <label className="eyebrow block mb-2">Mobile Number {smsConsent ? '(required)' : '(required only to receive texts)'}</label>
+        <input
+          type="tel" placeholder="(555) 555-5555" value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required={smsConsent}
+          className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+        />
+      </div>
+
       <div className="flex items-start gap-3" style={{ marginTop: '0.25rem' }}>
         <input
           type="checkbox"
-          id="smsConsent"
+          id="smsUpdatesConsent"
           checked={smsConsent}
           onChange={(e) => setSmsConsent(e.target.checked)}
-          style={{ marginTop: '3px', accentColor: '#1E90FF', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+          style={{ marginTop: '3px', accentColor: '#1E90FF', width: '18px', height: '18px', flexShrink: 0, cursor: 'pointer' }}
         />
-        <label htmlFor="smsConsent" className="font-body text-xs cursor-pointer" style={{ color: '#A0A0A0', lineHeight: '1.5' }}>
-          I agree to receive SMS text messages from TBF Entertainment at the number provided. Message frequency varies. Message and data rates may apply. Reply <strong style={{ color: '#E0E0E0' }}>STOP</strong> to unsubscribe at any time. Reply <strong style={{ color: '#E0E0E0' }}>HELP</strong> for help. See our{' '}
-          <a href="/privacy-policy" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Privacy Policy</a> and{' '}
-          <a href="/terms" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Terms of Service</a>.
-          {' '}Mobile information will not be shared with third parties for marketing purposes.
+        <label htmlFor="smsUpdatesConsent" className="font-body text-xs cursor-pointer" style={{ color: '#A0A0A0', lineHeight: '1.6' }}>
+          I agree to receive recurring promotional and informational text messages from TBF Entertainment at the mobile number provided. Up to 4 messages per month. Message and data rates may apply. Consent is not a condition of purchase. Reply <strong style={{ color: '#E0E0E0' }}>STOP</strong> to unsubscribe or <strong style={{ color: '#E0E0E0' }}>HELP</strong> for assistance. View our{' '}
+          <a href="/privacy" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Privacy Policy</a> and{' '}
+          <a href="/terms" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Terms and Conditions</a>.
         </label>
       </div>
+
       {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error}</p>}
-      <button type="submit" disabled={sending} className="btn-blue w-full md:w-auto" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Submit Inquiry'}</button>
+      <button type="submit" disabled={sending} className="btn-blue w-full md:w-auto" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? 'Sending…' : 'Sign Up'}</button>
+      <p className="font-body" style={{ fontSize: '0.68rem', color: '#7A7A7A', lineHeight: '1.6' }}>
+        Consent is not a condition of any purchase. You can join the list without opting in to text messages, and you can opt out at any time by replying STOP.
+      </p>
     </form>
   );
 }
@@ -707,31 +855,31 @@ function HomePage({ setPage }) {
             <Reveal delay={160}>
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse flex-shrink-0" />
-                <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.62rem' }}>Available Now — Print &amp; eBook</span>
+                <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.62rem' }}>Available Now — {FEATURED_BOOK.format}</span>
               </div>
 
               <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.4rem, 4.5vw, 4rem)' }}>
-                Young G's<br />vs. O.G.'s
+                {FEATURED_BOOK.title}
               </h2>
               <p className="font-body uppercase tracking-[0.14em] mb-6" style={{ fontSize: '0.72rem', color: '#C0C0C0' }}>
-                The Takeover — Book One
+                {FEATURED_BOOK.subtitle}
               </p>
 
               <div className="blue-line" />
 
               <p className="font-body text-tbf-silver leading-relaxed mb-8" style={{ fontSize: '1rem', maxWidth: '440px' }}>
-                A war in Cincinnati. A young crew with nothing to lose. Four OG legends with forty years behind them. The debut release from TBF Entertainment Publishing.
+                A war in Cincinnati. A young crew with nothing to lose. Old Gs with forty years behind them. The debut release from TBF Entertainment Publishing.
               </p>
 
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                  href={FEATURED_BOOK.amazonUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-blue"
                   style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 >
-                  Buy on Amazon <span style={{ fontSize: '0.85em' }}>↗</span>
+                  {BUY_LABEL} <span aria-hidden="true" style={{ fontSize: '0.85em' }}>↗</span>
                 </a>
                 <button onClick={() => go('youngGs')} className="btn-outline-blue">
                   Full Details →
@@ -868,9 +1016,9 @@ function HomePage({ setPage }) {
                 <span className="font-body font-bold uppercase tracking-[0.2em] text-tbf-blue" style={{ fontSize: '0.6rem' }}>Debut Release</span>
               </div>
               <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)' }}>
-                Young Gs<br />vs. Old Gs
+                {FEATURED_BOOK.title}
               </h3>
-              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>The Takeover — Book One</p>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>{FEATURED_BOOK.subtitle}</p>
               <div className="w-10 h-px mb-5" style={{ background: '#1E90FF' }} />
               <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                 The debut release under TBF Entertainment Publishing. A story rooted in real culture, generational tension, and authentic street narratives — told with discipline and intent.
@@ -1094,12 +1242,12 @@ function PublishingPage({ setPage }) {
                     <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
                   </div>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={FEATURED_BOOK.amazonUrl}
                     target="_blank" rel="noopener noreferrer"
                     className="btn-blue w-full text-center"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    Get the Book ↗
+                    {BUY_LABEL} <span aria-hidden="true">↗</span>
                   </a>
                   <button className="btn-outline-blue w-full" onClick={() => go('connect')}>Get First Access</button>
                 </div>
@@ -1108,15 +1256,15 @@ function PublishingPage({ setPage }) {
 
             <Reveal delay={200}>
               <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
-                Young Gs<br />vs. Old Gs
+                {FEATURED_BOOK.title}
               </h2>
-              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>The Takeover — Book One</p>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>{FEATURED_BOOK.subtitle}</p>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed mb-5" style={{ fontSize: '1rem' }}>
                 The debut release from TBF Entertainment Publishing. A story rooted in generational tension, street culture, and authentic voice — told without compromise and built to last in the catalog.
               </p>
               <p className="font-body text-tbf-silver-dim leading-relaxed mb-8" style={{ fontSize: '0.9rem' }}>
-                Young Gs vs. Old Gs: The Takeover sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
+                Young Gs vs Old Gs sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
               </p>
               <div className="p-6 mb-8" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
                 <p className="font-body text-tbf-silver italic leading-relaxed" style={{ fontSize: '0.95rem' }}>
@@ -1142,7 +1290,7 @@ function PublishingPage({ setPage }) {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          KDP LAUNCH CAMPAIGN — Young Gs vs. Old Gs: The Takeover
+          LAUNCH CAMPAIGN — Young Gs vs Old Gs
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.022) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
@@ -1156,7 +1304,7 @@ function PublishingPage({ setPage }) {
               </h2>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed max-w-2xl" style={{ fontSize: '1rem' }}>
-                Young G's vs. Old Gs: The Takeover is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
+                Young Gs vs Old Gs is available now in paperback on Amazon. Cincinnati doesn't forget.
               </p>
             </div>
           </Reveal>
@@ -1167,14 +1315,14 @@ function PublishingPage({ setPage }) {
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
-                  <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Available Now — Print &amp; eBook</span>
+                  <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Available Now — {FEATURED_BOOK.format}</span>
                 </div>
                 <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.8rem)' }}>
-                  Young Gs vs. Old Gs
+                  {FEATURED_BOOK.title}
                 </h3>
-                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>The Takeover — Book One</p>
+                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>{FEATURED_BOOK.subtitle}</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
-                  Book One of the series. Nine chapters. A war in Cincinnati. A young crew with nothing to lose against four OG legends with forty years of patience behind them.
+                  A war in Cincinnati. A young crew with nothing to lose against Old Gs with forty years of patience behind them.
                 </p>
                 <div className="p-5 mb-6" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
                   <p className="font-body text-tbf-silver italic" style={{ fontSize: '0.9rem' }}>
@@ -1183,12 +1331,12 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { label: 'Author',    value: 'O.G. Tom Tom' },
+                    { label: 'Author',    value: FEATURED_BOOK.author },
                     { label: 'Publisher', value: 'TBF Entertainment' },
-                    { label: 'Format',    value: 'Print + eBook + Kindle' },
+                    { label: 'Format',    value: FEATURED_BOOK.format },
+                    { label: 'Price',     value: FEATURED_BOOK.price },
                     { label: 'Genre',     value: 'Urban Fiction / Street Lit' },
                     { label: 'Setting',   value: 'Cincinnati, Ohio' },
-                    { label: 'Series',    value: 'Book One of Series' },
                   ].map((item) => (
                     <div key={item.label} className="flex flex-col gap-1">
                       <span className="eyebrow" style={{ fontSize: '0.58rem' }}>{item.label}</span>
@@ -1198,14 +1346,14 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={FEATURED_BOOK.amazonUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-blue text-center"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    <span>Buy on Amazon KDP</span>
-                    <span style={{ fontSize: '0.85em' }}>↗</span>
+                    <span>{BUY_LABEL}</span>
+                    <span aria-hidden="true" style={{ fontSize: '0.85em' }}>↗</span>
                   </a>
                   <button onClick={() => go('youngGs')} className="btn-outline-blue">View Book Page →</button>
                   <button onClick={() => go('connect')} className="btn-outline-blue">Request ARC Copy</button>
@@ -1218,9 +1366,9 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    { label: 'Paperback', price: '$14.99 – $16.99', platform: 'Amazon KDP + IngramSpark' },
-                    { label: 'eBook',     price: '$4.99 – $6.99',   platform: 'Kindle + Draft2Digital' },
-                    { label: 'Indie',     price: 'Consignment',      platform: 'Cincinnati Black Bookstores' },
+                    { label: 'Paperback', price: FEATURED_BOOK.price, platform: 'Amazon' },
+                    { label: 'Author',    price: FEATURED_BOOK.author, platform: 'TBF Entertainment Publishing' },
+                    { label: 'Setting',   price: 'Cincinnati, OH',     platform: 'Urban Fiction / Street Lit' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between px-5 py-4" style={{ background: '#111111', border: '1px solid #1A1A1A' }}>
                       <div>
@@ -1247,8 +1395,8 @@ function PublishingPage({ setPage }) {
           </Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-20">
             {[
-              { phase: '01', label: 'Build', days: 'Days 1–7',  color: '#1E90FF', desc: 'Platform setup. KDP live. Cover finalized. ARC readers recruited. Social accounts armed. Infrastructure locked before anything goes public.' },
-              { phase: '02', label: 'Ignite', days: 'Days 8–14', color: '#1E90FF', desc: 'Cover drops on all platforms. Pre-orders open. Excerpt campaign begins. Influencer activation. Goodreads giveaway live.' },
+              { phase: '01', label: 'Build', days: 'Days 1–7',  color: '#1E90FF', desc: 'Platform setup. Amazon listing live. Cover finalized. ARC readers recruited. Social accounts armed. Infrastructure locked before anything goes public.' },
+              { phase: '02', label: 'Ignite', days: 'Days 8–14', color: '#1E90FF', desc: 'Cover drops across social. Excerpt campaign begins. Influencer activation. Goodreads giveaway live.' },
               { phase: '03', label: 'Strike', days: 'Days 15–21', color: '#1E90FF', desc: 'Launch day. Every platform fires at once. ARC reviews post. Author goes live. Local Cincinnati placements. Total saturation.' },
               { phase: '04', label: 'Hold',  days: 'Days 22–30', color: '#C0C0C0', desc: 'Reader spotlight content. Book 2 tease drops. Analytics reviewed. Month 2 strategy built from data. Momentum sustained.' },
             ].map((item, i) => (
@@ -1305,10 +1453,8 @@ function PublishingPage({ setPage }) {
           </Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
             {[
-              { platform: 'Amazon KDP', focus: 'Print (Paperback)', detail: 'Primary retail channel. Optimized listing with keywords: urban fiction, street lit, Cincinnati, gang fiction, Black fiction.', status: 'Live' },
-              { platform: 'Kindle',     focus: 'eBook',             detail: 'MOBI/ePub format. Kindle Unlimited enrollment decision by Day 5. Suggested price: $4.99–$6.99.', status: 'Live' },
-              { platform: 'IngramSpark', focus: 'Expanded Print',    detail: 'Barnes & Noble + independent bookstore access. Wholesale enabled for consignment outreach.', status: 'Active' },
-              { platform: 'Draft2Digital', focus: 'eBook Distribution', detail: 'Expanded eBook reach beyond Amazon. Supplementary channel for non-Kindle readers.', status: 'Active' },
+              { platform: 'Amazon', focus: 'Paperback', detail: 'Primary retail channel. Optimized listing with keywords: urban fiction, street lit, Cincinnati, gang fiction, Black fiction.', status: 'Live' },
+              { platform: 'Independent Print', focus: 'Expanded Print',    detail: 'Barnes & Noble + independent bookstore access. Wholesale enabled for consignment outreach.', status: 'Planned' },
               { platform: 'TikTok / BookTok', focus: 'Viral Discovery', detail: 'Primary social channel. Dramatic readings, character intros, comparable title content. Daily during launch week.', status: 'Running' },
               { platform: 'Black Bookstores', focus: 'Cincinnati + Region', detail: 'Avondale, Bond Hill, Madisonville consignment. Physical copy delivery Week 2. Pop-up signing events.', status: 'Outreach' },
             ].map((item, i) => (
@@ -1622,7 +1768,7 @@ function YoungGsPage({ setPage }) {
                   Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
                 </p>
                 <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
-                  <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
+                  <a href={FEATURED_BOOK.amazonUrl} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">{BUY_LABEL} ↗</a>
                   <button onClick={() => go('connect')} className="yg-btn-out">Request ARC Copy</button>
                 </div>
               </Reveal>
@@ -1634,12 +1780,16 @@ function YoungGsPage({ setPage }) {
                 <div className="absolute pointer-events-none" style={{ top:'-30px', right:'-30px', width:'70%', height:'70%', background:'radial-gradient(ellipse, rgba(27,79,190,0.28) 0%, transparent 70%)' }} />
                 <div className="absolute pointer-events-none" style={{ bottom:'-20px', left:'-20px', width:'60%', height:'60%', background:'radial-gradient(ellipse, rgba(192,21,15,0.22) 0%, transparent 70%)' }} />
                 <img
-                  src="/book-cover.png"
-                  alt="Young Gs vs Old Gs — O.G. Tom Tom"
-                  style={{ width:'100%', aspectRatio:'2/3', objectFit:'cover', objectPosition:'right center', display:'block', boxShadow:'-16px 16px 60px rgba(192,21,15,0.28), 16px 16px 60px rgba(27,79,190,0.28), 0 32px 100px rgba(0,0,0,0.9)', border:'1px solid rgba(201,146,10,0.15)' }}
+                  src={FEATURED_BOOK.coverSrc}
+                  alt={FEATURED_BOOK.coverAlt}
+                  width="1200"
+                  height="1800"
+                  loading="eager"
+                  decoding="async"
+                  style={{ width:'100%', aspectRatio:'2/3', objectFit:'contain', objectPosition:'center', display:'block', background:'#050505', boxShadow:'-16px 16px 60px rgba(192,21,15,0.28), 16px 16px 60px rgba(27,79,190,0.28), 0 32px 100px rgba(0,0,0,0.9)', border:'1px solid rgba(201,146,10,0.15)' }}
                 />
                 <div style={{ position:'absolute', bottom:'-14px', left:0, fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.58rem', fontWeight:600, letterSpacing:'0.24em', textTransform:'uppercase', color:'#C9920A', background:'#0E0E0E', padding:'5px 12px', border:'1px solid rgba(201,146,10,0.3)' }}>
-                  Now Available — Print &amp; eBook
+                  Now Available — {FEATURED_BOOK.format}
                 </div>
               </div>
             </Reveal>
@@ -1702,18 +1852,22 @@ function YoungGsPage({ setPage }) {
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'28px' }}>
                 Cincinnati, Ohio — a city that rarely gets its story told on its own terms. Until now.
               </p>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
+              <a href={FEATURED_BOOK.amazonUrl} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">{BUY_LABEL} ↗</a>
             </Reveal>
           </div>
           <Reveal delay={120}>
-            <div>
+            <div style={{ maxWidth:'320px', margin:'0 auto' }}>
               <img
-                src="/book-cover.png"
-                alt="Full cover spread — Young Gs vs Old Gs"
-                style={{ width:'100%', display:'block', objectFit:'cover', objectPosition:'left center', maxHeight:'440px', boxShadow:'0 20px 80px rgba(0,0,0,0.8)', border:'1px solid rgba(255,255,255,0.05)' }}
+                src={FEATURED_BOOK.coverSrc}
+                alt={FEATURED_BOOK.coverAlt}
+                width="1200"
+                height="1800"
+                loading="lazy"
+                decoding="async"
+                style={{ width:'100%', aspectRatio:'2/3', display:'block', objectFit:'contain', objectPosition:'center', background:'#050505', boxShadow:'0 20px 80px rgba(0,0,0,0.8)', border:'1px solid rgba(255,255,255,0.05)' }}
               />
               <p style={{ marginTop:'12px', fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.6rem', fontWeight:600, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.25)', textAlign:'center' }}>
-                Print Edition — O.G. Tom Tom
+                {FEATURED_BOOK.format} — {FEATURED_BOOK.author}
               </p>
             </div>
           </Reveal>
@@ -1820,7 +1974,7 @@ function YoungGsPage({ setPage }) {
           <div className="yg-grid-3">
             {[
               { tag:'Reader Review', line:'Be one of the first readers on the record.' },
-              { tag:'Reader Review', line:'Your honest take on the takeover goes here.' },
+              { tag:'Reader Review', line:'Your honest take on the story goes here.' },
               { tag:'Reader Review', line:'Reserved for a launch-week voice from the city.' },
             ].map((c, i) => (
               <Reveal key={i} delay={i * 90}>
@@ -1887,15 +2041,15 @@ function YoungGsPage({ setPage }) {
               Get the<br /><span style={{ color:'#C9920A' }}>Book.</span>
             </div>
             <p style={{ fontSize:'0.98rem', color:'#B8B4AE', marginBottom:'32px', lineHeight:1.7 }}>
-              Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />Available in print and eBook everywhere books are sold.
+              Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />Available now in paperback on Amazon.
             </p>
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              {['Print — Paperback','eBook — Kindle','Amazon KDP','IngramSpark'].map(f => (
+              {['Paperback', FEATURED_BOOK.price, 'Amazon'].map(f => (
                 <span key={f} className="yg-format-pill">{f}</span>
               ))}
             </div>
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
+              <a href={FEATURED_BOOK.amazonUrl} target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>{BUY_LABEL} ↗</a>
               <button onClick={() => go('connect')} className="yg-btn-out" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Request ARC Copy</button>
             </div>
             <div style={{ marginTop:'40px', paddingTop:'28px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
@@ -2174,24 +2328,24 @@ function BooksPage({ setPage }) {
                   <span className="font-body font-semibold uppercase tracking-[0.18em]" style={{ fontSize: '0.62rem', color: '#C9920A' }}>Flagship Release — Book One</span>
                 </div>
                 <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>
-                  Young Gs vs Old Gs
+                  {FEATURED_BOOK.title}
                 </h3>
-                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>The Takeover — O.G. Tom Tom</p>
+                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>{FEATURED_BOOK.subtitle} — {FEATURED_BOOK.author}</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-6" style={{ fontSize: '0.96rem', maxWidth: '420px' }}>
-                  A war in Cincinnati. Young Gs with nothing to lose. Four OG legends with forty years of patience. Two codes. One outcome.
+                  A war in Cincinnati. Young Gs with nothing to lose. Old Gs with forty years of patience. Two codes. One outcome.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <button onClick={(e) => { e.stopPropagation(); go('youngGs'); }} className="btn-blue" style={{ background: '#C9920A', borderColor: '#C9920A', color: '#080808' }}>
                     View Book Page →
                   </button>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom"
+                    href={FEATURED_BOOK.amazonUrl}
                     target="_blank" rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="btn-outline-blue"
                     style={{ textDecoration: 'none' }}
                   >
-                    Buy on Amazon ↗
+                    {BUY_LABEL} ↗
                   </a>
                 </div>
               </div>
@@ -2338,41 +2492,53 @@ function ComplianceLayout({ title, children, setPage }) {
 function PrivacyPolicyPage({ setPage }) {
   return (
     <ComplianceLayout title="Privacy Policy" setPage={setPage}>
-      <p>TBF Entertainment LLC ("we," "us," or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you visit tbfentertainment.art or interact with our publishing, artistry, and media divisions.</p>
+      <p>TBF Entertainment ("we," "us," or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you visit tbfentertainment.art or interact with our publishing, artistry, and media divisions.</p>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">1. Information We Collect</h2>
-        <p>We collect personal information that you voluntarily provide when you submit an inquiry through our Connect form, sign up for early access or release updates, or opt-in to receive SMS communications. This may include your name, email address, phone number, and any other details you choose to provide.</p>
+        <p>We collect personal information that you voluntarily provide when you submit an inquiry through our Connect form, sign up for release updates, or opt in to receive SMS communications on our SMS Updates page. This may include your name, email address, phone number, and any other details you choose to provide.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">2. How We Use Your Information</h2>
-        <p>We use the information we collect to respond to your inquiries regarding publishing, artistry, or media partnerships; send promotional updates and new release announcements; and provide customer support.</p>
+        <p>We use the information we collect to respond to your inquiries regarding publishing, artistry, or media partnerships; send promotional and informational updates and new release announcements to subscribers who have opted in; and provide customer support.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">3. SMS Communications and Mobile Data</h2>
-        <p>If you opt-in to receive SMS messages from TBF Entertainment, we will use your phone number to send marketing and informational updates.</p>
-        <p className="mt-3 font-semibold text-white">No Mobile Information Sharing: Mobile information and consent data will not be shared with, sold to, or rented to third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent will be kept strictly confidential.</p>
-        <p className="mt-3">Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe at any time. Reply HELP for help. For support, contact info@tbfentertainment.art or call 513-866-3832.</p>
+        <p>If you opt in to receive SMS messages from TBF Entertainment, we will use your mobile telephone number to send recurring promotional and informational updates.</p>
+        <p className="mt-3 font-semibold text-white">TBF Entertainment does not sell mobile telephone information. Mobile telephone numbers, SMS opt-in records, and messaging-consent information will not be shared with third parties or affiliates for their own marketing or promotional purposes.</p>
+        <p className="mt-3">The following terms apply to our SMS program:</p>
+        <ul className="mt-2 list-disc pl-6 space-y-1">
+          <li>Message frequency: up to 4 messages per month.</li>
+          <li>Message and data rates may apply.</li>
+          <li>Consent is not a condition of purchase.</li>
+          <li>Reply <strong className="text-white">STOP</strong> to unsubscribe at any time.</li>
+          <li>Reply <strong className="text-white">HELP</strong> for assistance.</li>
+        </ul>
+        <p className="mt-3">Operational service providers (for example, our messaging platform and database provider) may process only the data required to perform services for TBF Entertainment, and are not permitted to use it for their own purposes. Opt-out suppression records may be retained to prevent future unauthorized messaging to numbers that have unsubscribed.</p>
+        <p className="mt-3">For SMS support, contact <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a>.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">4. Third-Party Links</h2>
-        <p>Our website contains links to third-party platforms such as Amazon KDP. We are not responsible for the privacy practices or content of these external sites.</p>
+        <p>Our website contains links to third-party platforms such as Amazon. We are not responsible for the privacy practices or content of these external sites.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">5. Your Rights</h2>
-        <p>You have the right to request access to, correction of, or deletion of your personal data. To exercise these rights, contact us at:</p>
-        <p className="mt-3">Email: <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a></p>
-        <p>Phone: 513-866-3832</p>
-        <p>Address: 9435 Waterstone Blvd Ste 140, Cincinnati, OH 45249</p>
+        <p>You have the right to request access to, correction of, or deletion of your personal data. To exercise these rights, contact us at <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a>.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">6. Changes to This Policy</h2>
         <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page with an updated effective date.</p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">7. Contact</h2>
+        <p>TBF Entertainment — Cincinnati, Ohio.</p>
+        <p className="mt-1">Email: <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a></p>
       </div>
     </ComplianceLayout>
   );
@@ -2380,8 +2546,8 @@ function PrivacyPolicyPage({ setPage }) {
 
 function TermsPage({ setPage }) {
   return (
-    <ComplianceLayout title="Terms of Service" setPage={setPage}>
-      <p>These Terms of Service ("Terms") govern your use of the TBF Entertainment website (tbfentertainment.art) and any related services provided by TBF Entertainment LLC ("we," "us," or "our"). By accessing or using our site, you agree to be bound by these Terms.</p>
+    <ComplianceLayout title="Terms &amp; Conditions" setPage={setPage}>
+      <p>These Terms and Conditions ("Terms") govern your use of the TBF Entertainment website (tbfentertainment.art) and any related services provided by TBF Entertainment ("we," "us," or "our"). By accessing or using our site, you agree to be bound by these Terms.</p>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">1. Use of the Website</h2>
@@ -2389,17 +2555,21 @@ function TermsPage({ setPage }) {
       </div>
 
       <div>
-        <h2 className="font-display text-lg font-semibold text-white mb-2">2. SMS Messaging Terms</h2>
-        <p>By providing your phone number and checking the SMS consent box on our Connect form, you expressly consent to receive recurring automated marketing text messages from TBF Entertainment at the number provided. Consent is not a condition of purchase.</p>
-        <p className="mt-3">Message frequency varies. Message and data rates may apply.</p>
-        <p className="mt-3 font-semibold text-white">To opt out: Reply STOP to any message. You will receive a confirmation and no further messages will be sent.</p>
-        <p className="mt-3 font-semibold text-white">For help: Reply HELP or contact info@tbfentertainment.art or call 513-866-3832.</p>
-        <p className="mt-3">Supported carriers are not liable for delayed or undelivered messages.</p>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">2. SMS Text Messaging Program</h2>
+        <p><strong className="text-white">Program sender:</strong> TBF Entertainment.</p>
+        <p className="mt-2"><strong className="text-white">Purpose:</strong> By opting in on our SMS Updates page, you expressly consent to receive recurring automated text messages from TBF Entertainment at the mobile number provided, including book releases, author events, announcements, and promotions.</p>
+        <p className="mt-2"><strong className="text-white">Message frequency:</strong> up to 4 messages per month.</p>
+        <p className="mt-2">Message and data rates may apply. Consent is not a condition of purchase.</p>
+        <p className="mt-3 font-semibold text-white">To opt out: Reply STOP (or STOPALL, UNSUBSCRIBE, CANCEL, END, or QUIT) to any message. You will receive a one-time confirmation and no further messages will be sent. Reply START to resubscribe.</p>
+        <p className="mt-2 font-semibold text-white">For help: Reply HELP (or INFO), or contact <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a>.</p>
+        <p className="mt-3">Carriers are not liable for delayed or undelivered messages.</p>
+        <p className="mt-3">Your mobile information is handled in accordance with our{' '}
+          <button onClick={() => setPage('privacyPolicy')} className="text-tbf-blue hover:text-white underline transition-colors duration-200">Privacy Policy</button>.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">3. Intellectual Property</h2>
-        <p>All content on this website — including text, graphics, logos, images, and audio clips — is the property of TBF Entertainment LLC and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or create derivative works without our express written permission.</p>
+        <p>All content on this website — including text, graphics, logos, images, and audio clips — is the property of TBF Entertainment and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or create derivative works without our express written permission.</p>
       </div>
 
       <div>
@@ -2409,20 +2579,49 @@ function TermsPage({ setPage }) {
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">5. Limitation of Liability</h2>
-        <p>To the fullest extent permitted by law, TBF Entertainment LLC shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of this website or our services.</p>
+        <p>To the fullest extent permitted by law, TBF Entertainment shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of this website or our services.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">6. Governing Law</h2>
-        <p>These Terms are governed by the laws of the State of Ohio, without regard to its conflict of law provisions. Any disputes shall be resolved in the courts of Hamilton County, Ohio.</p>
+        <p>These Terms are governed by the laws of the State of Ohio, without regard to its conflict of law provisions.</p>
       </div>
 
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">7. Contact</h2>
-        <p>If you have any questions about these Terms, please contact us:</p>
-        <p className="mt-3">Email: <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a></p>
-        <p>Phone: 513-866-3832</p>
-        <p>Address: 9435 Waterstone Blvd Ste 140, Cincinnati, OH 45249</p>
+        <p>If you have any questions about these Terms, contact us at <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a>.</p>
+      </div>
+    </ComplianceLayout>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SMS UPDATES PAGE — public A2P consent surface (/sms-updates)
+───────────────────────────────────────────────────────── */
+function SmsUpdatesPage({ setPage }) {
+  return (
+    <ComplianceLayout title="SMS Updates" setPage={setPage}>
+      <p>Get text updates from TBF Entertainment — new book releases, author events, and announcements straight to your phone. Signing up is optional and separate from any purchase or inquiry.</p>
+
+      <div className="p-6 mt-2" style={{ background: 'rgba(30,144,255,0.05)', border: '1px solid rgba(30,144,255,0.22)' }}>
+        <SmsOptInForm />
+      </div>
+
+      <div>
+        <h2 className="font-display text-lg font-semibold text-white mb-2">Program details</h2>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Sender: TBF Entertainment.</li>
+          <li>Messages: book releases, author events, announcements, and promotions.</li>
+          <li>Frequency: up to 4 messages per month.</li>
+          <li>Message and data rates may apply. Consent is not a condition of purchase.</li>
+          <li>Reply <strong className="text-white">STOP</strong> to unsubscribe, <strong className="text-white">HELP</strong> for assistance.</li>
+          <li>Support: <a href="mailto:info@tbfentertainment.art" className="text-tbf-blue hover:text-white transition-colors duration-200">info@tbfentertainment.art</a></li>
+        </ul>
+        <p className="mt-3">
+          See our{' '}
+          <button onClick={() => setPage('privacyPolicy')} className="text-tbf-blue hover:text-white underline transition-colors duration-200">Privacy Policy</button>{' '}and{' '}
+          <button onClick={() => setPage('terms')} className="text-tbf-blue hover:text-white underline transition-colors duration-200">Terms &amp; Conditions</button>.
+        </p>
       </div>
     </ComplianceLayout>
   );
@@ -2445,13 +2644,22 @@ const PATHS = {
   media:         '/media',
   connect:       '/connect',
   youngGs:       '/young-gs',
-  privacyPolicy: '/privacy-policy',
+  privacyPolicy: '/privacy',
   terms:         '/terms',
+  smsUpdates:    '/sms-updates',
+};
+
+// Backward-compatible path aliases → canonical page key. These resolve on
+// direct hits/old links but the canonical PATHS above are what the URL bar shows.
+const PATH_ALIASES = {
+  '/privacy-policy': 'privacyPolicy',
+  '/sms': 'smsUpdates',
+  '/terms-and-conditions': 'terms',
 };
 
 const pageFromPath = (path) => {
   const match = Object.keys(PATHS).find((key) => PATHS[key] === path);
-  return match || 'home';
+  return match || PATH_ALIASES[path] || 'home';
 };
 
 export default function App() {
@@ -2489,6 +2697,7 @@ export default function App() {
       case 'connect':    return <ConnectPage />;
       case 'privacyPolicy': return <PrivacyPolicyPage setPage={setPage} />;
       case 'terms':         return <TermsPage setPage={setPage} />;
+      case 'smsUpdates':    return <SmsUpdatesPage setPage={setPage} />;
       default:           return <HomePage         setPage={setPage} />;
     }
   };

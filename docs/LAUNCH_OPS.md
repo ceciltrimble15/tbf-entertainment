@@ -1,6 +1,6 @@
 # TBF Entertainment — Launch Operations
 
-Operational hub for launching **_Young G's vs. Old G's: The Takeover_** by O.G. Tom Tom (TBF Entertainment Publishing). This folder holds the trackers and checklists the website cannot hold on its own.
+Operational hub for launching **_Young Gs vs Old Gs_** by O.G. Tom Tom (TBF Entertainment Publishing). This folder holds the trackers and checklists the website cannot hold on its own.
 
 ## Contents
 
@@ -15,7 +15,7 @@ Operational hub for launching **_Young G's vs. Old G's: The Takeover_** by O.G. 
 
 The site is a single-page React/Vite app (`src/App.jsx`). State-based routing — every page lives at `/`.
 
-- **Deploy:** `npm run build` → `dist/` (configured in `vercel.json`, framework `vite`). Images in `public/` resolve to `/logo.png`, `/book-cover.png` after build.
+- **Deploy:** `npm run build` → `dist/` (configured in `vercel.json`, framework `vite`). Images in `public/` resolve to `/logo.png`, `/young-gs-vs-old-gs-approved-2026.jpg` after build.
 - **Portable single file:** `npm run build:standalone` regenerates `standalone.html` (self-contained, for email/preview). Do **not** hand-edit it — it is generated from `src/`.
 
 ## Lead capture — REQUIRED before launch
@@ -29,7 +29,7 @@ The email-capture box and the contact form are wired to a real submit path in `s
 
 Until `FORM_ENDPOINT` is set, forms **fall back to opening the visitor's email client** — leads are not lost, but capture is manual. Set the endpoint to automate it (and to optionally pipe leads straight into the Airtable tracker via Formspree → Airtable).
 
-### Per-form routing (Young G's landing page)
+### Per-form routing (Young Gs landing page)
 The forms pass a destination address to `submitLead(payload, to)`:
 
 | Form | Routes to |

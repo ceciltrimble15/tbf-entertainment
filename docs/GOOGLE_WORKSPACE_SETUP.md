@@ -35,7 +35,7 @@ In your domain registrar's DNS panel:
 Create a shared Drive **"TBF Publishing"**:
 
 - [ ] `/Manuscripts/Young Gs vs Old Gs/` — final manuscript + interior files.
-- [ ] `/Covers/` — `book-cover.png` master, print-res PDF, ebook JPG.
+- [ ] `/Covers/` — `young-gs-vs-old-gs-approved-2026.jpg` master (front cover, 2:3), print-res PDF.
 - [ ] `/KDP/` — interior PDF, cover PDF, metadata sheet.
 - [ ] `/Marketing/` — quotes, excerpts, social graphics, ARC PDF.
 - [ ] `/Admin/` — ISBN receipts, Bowker login notes, royalty reports.

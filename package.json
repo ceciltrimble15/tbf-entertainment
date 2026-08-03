@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --test",
     "serve": "npx serve -l $PORT -s dist --no-clipboard",
     "build": "vite build",
     "build:standalone": "STANDALONE=1 vite build && cp dist-standalone/index.html standalone.html",

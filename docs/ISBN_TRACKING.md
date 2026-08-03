@@ -11,7 +11,7 @@ Two paths — pick one and be consistent:
 
 > For a professional, multi-channel launch (KDP **+** IngramSpark **+** indie bookstores), use **owned Bowker ISBNs**. KDP-free ISBNs cannot be used on IngramSpark.
 
-## Registry — _Young G's vs. Old G's: The Takeover_
+## Registry — _Young Gs vs Old Gs_
 
 | Format | ISBN-13 | Imprint | Source | Distributor | Status | Assigned date |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ Two paths — pick one and be consistent:
 
 | ISBN-13 | Assigned to | Format | Date |
 | --- | --- | --- | --- |
-| `_____` | Young G's vs. Old G's Bk1 | Paperback | |
+| `_____` | Young Gs vs Old Gs Bk1 | Paperback | |
 | `_____` | (unassigned) | | |
 | `_____` | (unassigned) | | |
 

@@ -1,4 +1,4 @@
-# KDP Launch Checklist — _Young G's vs. Old G's: The Takeover_
+# KDP Launch Checklist — _Young Gs vs Old Gs_
 
 Operational checklist to publish on Amazon KDP and run the 30-day launch. This is the doer's version of the campaign shown on the Publishing page of the site.
 
@@ -17,7 +17,7 @@ Operational checklist to publish on Amazon KDP and run the 30-day launch. This i
 
 ### Kindle eBook
 - [ ] KDP → **Create** → Kindle eBook.
-- [ ] Title: `Young G's vs. Old G's: The Takeover`; Series: `Young G's vs. Old G's` (Book 1).
+- [ ] Title: `Young Gs vs Old Gs`; Series: `Young Gs vs Old Gs` (Book 1).
 - [ ] Author: `O.G. Tom Tom`; Publisher: `TBF Entertainment Publishing`.
 - [ ] Description (HTML allowed — use the site's hook copy).
 - [ ] **Keywords (7 slots):** `urban fiction`, `street lit`, `Cincinnati`, `gang fiction`, `Black fiction`, `crime drama`, `hood novel`.
@@ -60,8 +60,8 @@ Operational checklist to publish on Amazon KDP and run the 30-day launch. This i
 
 ## Metadata block (copy/paste source of truth)
 
-- **Title:** Young G's vs. Old G's: The Takeover
-- **Series:** Young G's vs. Old G's — Book 1
+- **Title:** Young Gs vs Old Gs
+- **Series:** Young Gs vs Old Gs — Book 1
 - **Author:** O.G. Tom Tom
 - **Publisher:** TBF Entertainment Publishing
 - **Genre / BISAC:** Urban Fiction / Street Lit (FIC049000, FIC006000)

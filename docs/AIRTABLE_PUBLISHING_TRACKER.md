@@ -1,6 +1,6 @@
 # Airtable Publishing Tracker
 
-A single Airtable base, **"TBF Publishing"**, to run the launch. Build the four tables below. This is intentionally lean — enough to manage _Young G's vs. Old G's_ and grow into a catalog, nothing more.
+A single Airtable base, **"TBF Publishing"**, to run the launch. Build the four tables below. This is intentionally lean — enough to manage _Young Gs vs Old Gs_ and grow into a catalog, nothing more.
 
 > Tip: Airtable's free plan is sufficient. Create the base manually, or import this spec. If you wire Formspree → Airtable, point it at the **Leads** table.
 
@@ -12,8 +12,8 @@ One row per book. The catalog backbone.
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| Title | Single line text | e.g. `Young G's vs. Old G's: The Takeover` |
-| Series | Single line text | `Young G's vs. Old G's` |
+| Title | Single line text | e.g. `Young Gs vs Old Gs` |
+| Series | Single line text | `Young Gs vs Old Gs` |
 | Book # | Number | `1` |
 | Author | Single line text | `O.G. Tom Tom` |
 | Status | Single select | `Drafting`, `Editing`, `Cover`, `Formatting`, `Live`, `Paused` |
@@ -25,7 +25,7 @@ One row per book. The catalog backbone.
 | Launch Date | Date | |
 | Notes | Long text | |
 
-Seed row: `Young G's vs. Old G's: The Takeover` — Book 1 — O.G. Tom Tom — Status `Live` — Formats `Paperback, eBook`.
+Seed row: `Young Gs vs Old Gs` — Book 1 — O.G. Tom Tom — Status `Live` — Formats `Paperback`.
 
 ---
 
