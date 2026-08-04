@@ -20,14 +20,32 @@ The site is a single-page React/Vite app (`src/App.jsx`). State-based routing �
 
 ## Lead capture — REQUIRED before launch
 
-The email-capture box and the contact form are wired to a real submit path in `src/App.jsx`, but they need **one** config value to deliver to you:
+The email-capture box and the contact form are wired to a real submit path in `src/App.jsx`, but they need **one** config value to deliver to you. The endpoint is now supplied through a **secure environment variable** (no secret in the repo):
 
-1. Create a free form at **https://formspree.io** using `info@tbfentertainment.art`.
+1. Create a free form at **https://formspree.io** using `info@tbfentertainment.art` (pending CEO approval of the backend).
 2. Copy its endpoint, e.g. `https://formspree.io/f/abcdwxyz`.
-3. In `src/App.jsx`, set `const FORM_ENDPOINT = 'https://formspree.io/f/abcdwxyz';`
+3. Set `VITE_FORM_ENDPOINT=https://formspree.io/f/abcdwxyz` in Vercel → Settings → Environment Variables (and in `.env.local` for local dev — see `.env.example`).
 4. `npm run build` (and `npm run build:standalone` if you use the single file), then redeploy.
 
-Until `FORM_ENDPOINT` is set, forms **fall back to opening the visitor's email client** — leads are not lost, but capture is manual. Set the endpoint to automate it (and to optionally pipe leads straight into the Airtable tracker via Formspree → Airtable).
+Until `VITE_FORM_ENDPOINT` is set, forms **fall back to opening the visitor's email client** — leads are not lost, but capture is manual. Full details, submitted fields, and how SMS consent is recorded are in [`FORM_SETUP.md`](./FORM_SETUP.md).
+
+## Book buy links — centralized
+
+Every Young G's vs. Old G's purchase button reads from two constants near the top of `src/App.jsx`:
+
+```js
+const YOUNG_GS_AMAZON_URL = '';
+const YOUNG_GS_IS_AVAILABLE = false;
+```
+
+While unverified, all buy buttons render a clearly-disabled **"Amazon Listing Coming Soon"** state, and availability/price/format/retailer claims are replaced with accurate "coming soon / to be announced" wording. To activate the entire site at once, set the **verified direct product-page URL** (never a search URL) and flip availability to `true`:
+
+```js
+const YOUNG_GS_AMAZON_URL = 'https://www.amazon.com/dp/XXXXXXXXXX';
+const YOUNG_GS_IS_AVAILABLE = true;
+```
+
+Nothing else needs to change. Then `npm run build` and redeploy.
 
 ### Per-form routing (Young G's landing page)
 The forms pass a destination address to `submitLead(payload, to)`:
@@ -43,8 +61,8 @@ The **mailto fallback honors these destinations exactly**. Note: a single free *
 
 ## Pre-launch quick gate
 
-- [ ] `FORM_ENDPOINT` set and a test submission received.
-- [ ] Amazon buy links point to the live product (replace search URLs with the ASIN — see KDP checklist).
+- [ ] `VITE_FORM_ENDPOINT` set (env var) and a test submission received.
+- [ ] `YOUNG_GS_AMAZON_URL` set to the verified direct product page and `YOUNG_GS_IS_AVAILABLE = true` (see KDP checklist). No search URLs.
 - [ ] `info@tbfentertainment.art` inbox live (Google Workspace checklist).
 - [ ] ISBNs recorded (`ISBN_TRACKING.md`).
 - [ ] Airtable base built and seeded (`AIRTABLE_PUBLISHING_TRACKER.md`).

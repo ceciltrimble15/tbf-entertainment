@@ -56,10 +56,56 @@
     @apply border-tbf-silver text-white -translate-y-px;
   }
 
+  /* ── Disabled purchase CTA ────────────────── */
+  /* Applied to buy buttons while the verified Amazon listing is not
+     live. Visually and functionally inert, but still clearly a button. */
+  .cta-disabled,
+  .cta-disabled:hover {
+    background: #1A1A1A !important;
+    border-color: #2B2B2B !important;
+    color: #7A7A7A !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+    opacity: 1;
+  }
+
   /* ── Section label ────────────────────────── */
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.22em] text-tbf-blue;
   }
+
+  /* ── Legal / long-form prose (Privacy, Terms, SMS) ── */
+  .legal-prose h2 {
+    @apply font-display font-black uppercase text-white tracking-wide;
+    font-size: 1.35rem;
+    margin: 2.4rem 0 0.9rem;
+  }
+  .legal-prose h3 {
+    @apply font-body font-semibold uppercase tracking-[0.14em] text-tbf-blue;
+    font-size: 0.8rem;
+    margin: 1.6rem 0 0.6rem;
+  }
+  .legal-prose p,
+  .legal-prose li {
+    @apply font-body text-tbf-silver;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    margin-bottom: 0.9rem;
+  }
+  .legal-prose ul {
+    list-style: disc;
+    padding-left: 1.4rem;
+    margin-bottom: 0.9rem;
+  }
+  .legal-prose li { margin-bottom: 0.4rem; }
+  .legal-prose a {
+    @apply text-tbf-blue;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .legal-prose a:hover { @apply text-white; }
+  .legal-prose strong { @apply text-white font-semibold; }
 
   /* ── Divider ──────────────────────────────── */
   .divider-blue {
