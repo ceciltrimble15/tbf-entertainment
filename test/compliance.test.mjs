@@ -14,14 +14,20 @@ const index = read('index.html');
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
 
-test('approved Amazon URL is centralized in the React app', () => {
+test('approved Amazon URL is centralized and Buy buttons are gated until verified', () => {
+  // Verified target is retained in the single-source config for later activation…
   assert.match(app, /https:\/\/www\.amazon\.com\/dp\/B0H962BXXC/);
-  assert.match(app, /Buy on Amazon — \$14\.99/);
+  // …but the sales gate is OFF, so no live purchase link fires yet.
+  assert.match(app, /const AMAZON_VERIFIED = false/);
+  // Disabled label is rendered; the price is NOT displayed while gated.
+  assert.match(app, /Buy on Amazon — Coming Soon/);
+  assert.doesNotMatch(app, /Buy on Amazon — \$14\.99/);
 });
 
-test('SMS page uses the approved Amazon destination and label', () => {
-  assert.match(sms, /https:\/\/www\.amazon\.com\/dp\/B0H962BXXC/);
-  assert.match(sms, /Buy on Amazon — \$14\.99/);
+test('SMS page keeps the Buy button gated (no live link, no price) until verified', () => {
+  assert.match(sms, /Buy on Amazon — Coming Soon/);
+  assert.doesNotMatch(sms, /Buy on Amazon — \$14\.99/);
+  assert.doesNotMatch(sms, /amazon\.com\/dp\/B0H962BXXC/);
 });
 
 test('public privacy policy includes mobile non-sharing and STOP HELP disclosures', () => {

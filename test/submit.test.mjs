@@ -159,13 +159,18 @@ await test('19 No secrets/detail in any response body', async () => {
   assert.deepEqual(bodies[0], { ok: true });
 });
 // 20. Correct Amazon URL on every Buy button (source scan)
-await test('20 Amazon URL + label centralized on all buy buttons', async () => {
+await test('20 Amazon config centralized; every buy button gated until verified', async () => {
   const src = readFileSync(join(ROOT, 'src/App.jsx'), 'utf8');
-  assert.match(src, /const AMAZON_BOOK_URL = 'https:\/\/www\.amazon\.com\/dp\/B0H962BXXC';/);
-  assert.match(src, /const BUY_LABEL = 'Buy on Amazon — \$14\.99';/);
+  // Single-source config retains the verified /dp/ target for later activation.
+  assert.match(src, /amazonUrl: 'https:\/\/www\.amazon\.com\/dp\/B0H962BXXC'/);
+  // Sales gate is OFF: no live purchase link fires and the price is not shown.
+  assert.match(src, /const AMAZON_VERIFIED = false/);
+  assert.match(src, /Buy on Amazon — Coming Soon/);
+  assert.ok(!/const AMAZON_BOOK_URL/.test(src), 'legacy AMAZON_BOOK_URL constant must be gone');
   assert.ok(!/amazon\.com\/s\?k=/.test(src), 'no amazon search URLs may remain');
-  const hrefs = (src.match(/href=\{AMAZON_BOOK_URL\}/g) || []).length;
-  assert.equal(hrefs, 7, 'expected 7 buy buttons, found ' + hrefs);
+  // Every buy button routes through the single gated <BuyButton /> control.
+  const buttons = (src.match(/<BuyButton\b/g) || []).length;
+  assert.equal(buttons, 7, 'expected 7 gated buy buttons, found ' + buttons);
 });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

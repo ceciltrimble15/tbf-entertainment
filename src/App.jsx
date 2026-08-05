@@ -1,12 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
 
 /* ─────────────────────────────────────────────────────────
-   BOOK / COMMERCE CONSTANTS
+   FEATURED BOOK — SINGLE SOURCE OF TRUTH
+
+   Every title, subtitle, author, price, cover and purchase link
+   reads from this frozen object. The cover is a versioned
+   filename so browsers / the CDN cannot serve a stale copy.
 ───────────────────────────────────────────────────────── */
-// Single source of truth for the Young G's buy link. Every Buy button
-// uses this — update in one place if the ASIN ever changes.
-const AMAZON_BOOK_URL = 'https://www.amazon.com/dp/B0H962BXXC';
-const BUY_LABEL = 'Buy on Amazon — $14.99';
+const FEATURED_BOOK = Object.freeze({
+  title: 'Young Gs vs Old Gs',
+  subtitle: 'A Street Code Story of Loyalty, Power, & Survival',
+  author: 'O.G. Tom Tom',
+  format: 'Paperback',
+  price: '$14.99',
+  asin: 'B0H962BXXC',
+  amazonUrl: 'https://www.amazon.com/dp/B0H962BXXC',
+  coverSrc: '/young-gs-vs-old-gs-approved-2026.jpg',
+  coverAlt:
+    'Young Gs vs Old Gs: A Street Code Story of Loyalty, Power, and Survival by O.G. Tom Tom',
+});
+
+/* SALES SAFETY GATE — Buy buttons stay DISABLED until a human verifies the
+   live Amazon listing (URL loads, correct book, approved cover, paperback
+   availability, current price). Flip AMAZON_VERIFIED to true ONLY after that
+   external check passes; every Buy button, price and availability badge then
+   activates from this one flag. Until then: no live link, no "$14.99", no
+   "Available Now" claim. */
+const AMAZON_VERIFIED = false;
+const BUY_LIVE = AMAZON_VERIFIED && Boolean(FEATURED_BOOK.amazonUrl);
+
+// Availability-aware copy (all gated off until verified).
+const AVAIL_BADGE  = BUY_LIVE ? `Available Now — ${FEATURED_BOOK.format}` : 'Amazon Listing — Coming Soon';
+const STATUS_BADGE = BUY_LIVE ? 'Now Available' : 'Coming Soon';
 
 /* ─────────────────────────────────────────────────────────
    LEAD CAPTURE CONFIG
@@ -50,6 +75,52 @@ async function submitLead(payload) {
   });
   if (!res.ok) throw new Error('Submission failed');
   return 'sent';
+}
+
+/* ─────────────────────────────────────────────────────────
+   BUY BUTTON — single gated purchase control
+
+   While AMAZON_VERIFIED is false: renders a clearly-disabled,
+   accessible "Buy on Amazon — Coming Soon" button that does not
+   navigate and does not reveal a price. Once verified, it becomes
+   a real link to the approved product page showing the price.
+
+   variant: 'blue' | 'outline' | 'gold'
+───────────────────────────────────────────────────────── */
+function BuyButton({ variant = 'blue', className = '', style = {} }) {
+  const base =
+    variant === 'gold' ? 'yg-btn-gold'
+    : variant === 'outline' ? 'btn-outline-blue'
+    : 'btn-blue';
+  const cls = `${base} ${className}`.trim();
+
+  if (BUY_LIVE) {
+    return (
+      <a
+        href={FEATURED_BOOK.amazonUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cls}
+        style={{ textDecoration: 'none', ...style }}
+      >
+        Buy on Amazon — {FEATURED_BOOK.price} ↗
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled
+      aria-disabled="true"
+      aria-label="Buy on Amazon — coming soon. The listing is being verified before purchases open."
+      title="The Buy button unlocks once the Amazon listing is verified."
+      className={`${cls} cta-disabled`}
+      style={style}
+    >
+      Buy on Amazon — Coming Soon
+    </button>
+  );
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -365,8 +436,8 @@ function BookCover({ size = 'lg' }) {
       }}
     >
       <img
-        src="/book-cover.png"
-        alt="Young Gs vs Old Gs: The Takeover — TBF Entertainment"
+        src={FEATURED_BOOK.coverSrc}
+        alt={FEATURED_BOOK.coverAlt}
         draggable={false}
         style={{
           width: '100%',
@@ -700,14 +771,14 @@ function HomePage({ setPage }) {
             <Reveal delay={160}>
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse flex-shrink-0" />
-                <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.62rem' }}>Available Now — Print &amp; eBook</span>
+                <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.62rem' }}>{AVAIL_BADGE}</span>
               </div>
 
               <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.4rem, 4.5vw, 4rem)' }}>
-                Young G's<br />vs. O.G.'s
+                {FEATURED_BOOK.title}
               </h2>
               <p className="font-body uppercase tracking-[0.14em] mb-6" style={{ fontSize: '0.72rem', color: '#C0C0C0' }}>
-                The Takeover — Book One
+                {FEATURED_BOOK.subtitle}
               </p>
 
               <div className="blue-line" />
@@ -717,15 +788,7 @@ function HomePage({ setPage }) {
               </p>
 
               <div className="flex flex-wrap gap-3">
-                <a
-                  href={AMAZON_BOOK_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-blue"
-                  style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-                >
-                  {BUY_LABEL} <span style={{ fontSize: '0.85em' }}>↗</span>
-                </a>
+                <BuyButton variant="blue" />
                 <button onClick={() => go('youngGs')} className="btn-outline-blue">
                   Full Details →
                 </button>
@@ -851,7 +914,7 @@ function HomePage({ setPage }) {
                 </div>
                 <div className="flex items-center gap-3 px-5 py-3" style={{ background: 'rgba(30,144,255,0.08)', border: '1px solid rgba(30,144,255,0.25)' }}>
                   <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
-                  <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
+                  <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>{STATUS_BADGE}</span>
                 </div>
               </div>
             </Reveal>
@@ -861,9 +924,9 @@ function HomePage({ setPage }) {
                 <span className="font-body font-bold uppercase tracking-[0.2em] text-tbf-blue" style={{ fontSize: '0.6rem' }}>Debut Release</span>
               </div>
               <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)' }}>
-                Young Gs<br />vs. Old Gs
+                {FEATURED_BOOK.title}
               </h3>
-              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>The Takeover — Book One</p>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.7rem', color: '#D4A017' }}>{FEATURED_BOOK.subtitle}</p>
               <div className="w-10 h-px mb-5" style={{ background: '#1E90FF' }} />
               <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                 The debut release under TBF Entertainment Publishing. A story rooted in real culture, generational tension, and authentic street narratives — told with discipline and intent.
@@ -1072,7 +1135,7 @@ function PublishingPage({ setPage }) {
       <section className="py-24 lg:py-36" style={{ background: '#060606' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <Reveal>
-            <p className="eyebrow mb-4">Debut Title — Now Available</p>
+            <p className="eyebrow mb-4">Debut Title — {STATUS_BADGE}</p>
           </Reveal>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start mt-6">
             <Reveal delay={100}>
@@ -1084,16 +1147,9 @@ function PublishingPage({ setPage }) {
                 <div className="flex flex-col gap-3 w-full max-w-xs">
                   <div className="flex items-center gap-3 px-4 py-3" style={{ background: 'rgba(30,144,255,0.08)', border: '1px solid rgba(30,144,255,0.25)' }}>
                     <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
-                    <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
+                    <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>{STATUS_BADGE}</span>
                   </div>
-                  <a
-                    href={AMAZON_BOOK_URL}
-                    target="_blank" rel="noopener noreferrer"
-                    className="btn-blue w-full text-center"
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  >
-                    {BUY_LABEL} ↗
-                  </a>
+                  <BuyButton variant="blue" className="w-full text-center" style={{ display: 'inline-flex', justifyContent: 'center' }} />
                   <button className="btn-outline-blue w-full" onClick={() => go('connect')}>Get First Access</button>
                 </div>
               </div>
@@ -1101,15 +1157,15 @@ function PublishingPage({ setPage }) {
 
             <Reveal delay={200}>
               <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
-                Young Gs<br />vs. Old Gs
+                {FEATURED_BOOK.title}
               </h2>
-              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>The Takeover — Book One</p>
+              <p className="font-body uppercase tracking-[0.18em] mb-4" style={{ fontSize: '0.72rem', color: '#D4A017' }}>{FEATURED_BOOK.subtitle}</p>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed mb-5" style={{ fontSize: '1rem' }}>
                 The debut release from TBF Entertainment Publishing. A story rooted in generational tension, street culture, and authentic voice — told without compromise and built to last in the catalog.
               </p>
               <p className="font-body text-tbf-silver-dim leading-relaxed mb-8" style={{ fontSize: '0.9rem' }}>
-                Young Gs vs. Old Gs: The Takeover sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
+                Young Gs vs Old Gs sits at the intersection of loyalty, legacy, and the cultural divide between generations raised in the same world but by different rules. This isn't nostalgia — it's a reckoning.
               </p>
               <div className="p-6 mb-8" style={{ background: '#0D0D0D', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
                 <p className="font-body text-tbf-silver italic leading-relaxed" style={{ fontSize: '0.95rem' }}>
@@ -1135,7 +1191,7 @@ function PublishingPage({ setPage }) {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          KDP LAUNCH CAMPAIGN — Young Gs vs. Old Gs: The Takeover
+          KDP LAUNCH CAMPAIGN — Young Gs vs Old Gs
       ═══════════════════════════════════════════════════ */}
       <section className="py-24 lg:py-36 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(30,144,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(30,144,255,0.022) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
@@ -1143,13 +1199,15 @@ function PublishingPage({ setPage }) {
 
           <Reveal>
             <div className="mb-16">
-              <p className="eyebrow mb-4">Active 30-Day Launch</p>
+              <p className="eyebrow mb-4">{BUY_LIVE ? 'Active 30-Day Launch' : '30-Day Launch Plan'}</p>
               <h2 className="font-display font-black uppercase text-white leading-none" style={{ fontSize: 'clamp(2.2rem, 4.5vw, 4rem)' }}>
-                The Campaign<br /><span style={{ color: '#1E90FF' }}>Is Live.</span>
+                The Campaign<br /><span style={{ color: '#1E90FF' }}>{BUY_LIVE ? 'Is Live.' : 'Is Ready.'}</span>
               </h2>
               <div className="blue-line" />
               <p className="font-body text-tbf-silver leading-relaxed max-w-2xl" style={{ fontSize: '1rem' }}>
-                Young G's vs. Old Gs: The Takeover is in active launch across Amazon KDP, eBook, and independent bookstores. Cincinnati doesn't forget.
+                {BUY_LIVE
+                  ? 'Young Gs vs Old Gs is in active launch across Amazon, eBook, and independent bookstores. Cincinnati doesn\'t forget.'
+                  : 'Young Gs vs Old Gs is being prepared for launch. Final retailers, formats, and pricing will be announced. Join the TBF list for release updates. Cincinnati doesn\'t forget.'}
               </p>
             </div>
           </Reveal>
@@ -1160,12 +1218,12 @@ function PublishingPage({ setPage }) {
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-2 h-2 rounded-full bg-tbf-blue animate-pulse" />
-                  <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Available Now — Print &amp; eBook</span>
+                  <span className="font-body font-semibold uppercase tracking-[0.18em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>{AVAIL_BADGE}</span>
                 </div>
                 <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.8rem)' }}>
-                  Young Gs vs. Old Gs
+                  {FEATURED_BOOK.title}
                 </h3>
-                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>The Takeover — Book One</p>
+                <p className="font-body uppercase tracking-[0.16em] mb-4" style={{ fontSize: '0.68rem', color: '#D4A017' }}>{FEATURED_BOOK.subtitle}</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-3" style={{ fontSize: '0.95rem' }}>
                   Book One of the series. Nine chapters. A war in Cincinnati. A young crew with nothing to lose against four OG legends with forty years of patience behind them.
                 </p>
@@ -1176,9 +1234,9 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { label: 'Author',    value: 'O.G. Tom Tom' },
+                    { label: 'Author',    value: FEATURED_BOOK.author },
                     { label: 'Publisher', value: 'TBF Entertainment' },
-                    { label: 'Format',    value: 'Print + eBook + Kindle' },
+                    { label: 'Format',    value: BUY_LIVE ? FEATURED_BOOK.format : 'To be announced' },
                     { label: 'Genre',     value: 'Urban Fiction / Street Lit' },
                     { label: 'Setting',   value: 'Cincinnati, Ohio' },
                     { label: 'Series',    value: 'Book One of Series' },
@@ -1190,16 +1248,7 @@ function PublishingPage({ setPage }) {
                   ))}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <a
-                    href={AMAZON_BOOK_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-blue text-center"
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  >
-                    <span>{BUY_LABEL}</span>
-                    <span style={{ fontSize: '0.85em' }}>↗</span>
-                  </a>
+                  <BuyButton variant="blue" className="text-center" />
                   <button onClick={() => go('youngGs')} className="btn-outline-blue">View Book Page →</button>
                   <button onClick={() => go('connect')} className="btn-outline-blue">Request ARC Copy</button>
                 </div>
@@ -1209,21 +1258,28 @@ function PublishingPage({ setPage }) {
                   <p className="mb-4">"When Tay pulls the trigger on the Big Fella — in broad daylight, in front of everybody, over a name — he starts a war that the whole city will feel."</p>
                   <p>"What nobody counted on was the funeral. The gold AK-47 pendants. The twenty-five million in clear duffel bags set in front of the casket."</p>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {[
-                    { label: 'Paperback', price: '$14.99 – $16.99', platform: 'Amazon KDP + IngramSpark' },
-                    { label: 'eBook',     price: '$4.99 – $6.99',   platform: 'Kindle + Draft2Digital' },
-                    { label: 'Indie',     price: 'Consignment',      platform: 'Cincinnati Black Bookstores' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between px-5 py-4" style={{ background: '#111111', border: '1px solid #1A1A1A' }}>
-                      <div>
-                        <div className="font-display font-bold uppercase text-white tracking-wide text-xs">{item.label}</div>
-                        <div className="font-body text-tbf-silver-dim" style={{ fontSize: '0.72rem' }}>{item.platform}</div>
+                {BUY_LIVE ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { label: 'Paperback', price: FEATURED_BOOK.price, platform: 'Amazon' },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between px-5 py-4" style={{ background: '#111111', border: '1px solid #1A1A1A' }}>
+                        <div>
+                          <div className="font-display font-bold uppercase text-white tracking-wide text-xs">{item.label}</div>
+                          <div className="font-body text-tbf-silver-dim" style={{ fontSize: '0.72rem' }}>{item.platform}</div>
+                        </div>
+                        <div className="font-body text-tbf-blue font-semibold text-sm">{item.price}</div>
                       </div>
-                      <div className="font-body text-tbf-blue font-semibold text-sm">{item.price}</div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-5 py-6" style={{ background: '#111111', border: '1px solid #1A1A1A', borderLeft: '3px solid #1E90FF' }}>
+                    <div className="font-display font-bold uppercase text-white tracking-wide text-sm mb-2">Formats &amp; Pricing</div>
+                    <p className="font-body text-tbf-silver-dim" style={{ fontSize: '0.82rem', lineHeight: 1.6 }}>
+                      Final formats and pricing will be announced. Join the TBF list for release updates.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </Reveal>
@@ -1630,7 +1686,7 @@ function YoungGsPage({ setPage }) {
                   Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
                 </p>
                 <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
-                  <a href={AMAZON_BOOK_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">{BUY_LABEL} ↗</a>
+                  <BuyButton variant="gold" />
                   <button onClick={() => go('connect')} className="yg-btn-out">Request ARC Copy</button>
                 </div>
               </Reveal>
@@ -1642,12 +1698,12 @@ function YoungGsPage({ setPage }) {
                 <div className="absolute pointer-events-none" style={{ top:'-30px', right:'-30px', width:'70%', height:'70%', background:'radial-gradient(ellipse, rgba(27,79,190,0.28) 0%, transparent 70%)' }} />
                 <div className="absolute pointer-events-none" style={{ bottom:'-20px', left:'-20px', width:'60%', height:'60%', background:'radial-gradient(ellipse, rgba(192,21,15,0.22) 0%, transparent 70%)' }} />
                 <img
-                  src="/book-cover.png"
-                  alt="Young Gs vs Old Gs — O.G. Tom Tom"
+                  src={FEATURED_BOOK.coverSrc}
+                  alt={FEATURED_BOOK.coverAlt}
                   style={{ width:'100%', aspectRatio:'2/3', objectFit:'cover', objectPosition:'right center', display:'block', boxShadow:'-16px 16px 60px rgba(192,21,15,0.28), 16px 16px 60px rgba(27,79,190,0.28), 0 32px 100px rgba(0,0,0,0.9)', border:'1px solid rgba(201,146,10,0.15)' }}
                 />
                 <div style={{ position:'absolute', bottom:'-14px', left:0, fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.58rem', fontWeight:600, letterSpacing:'0.24em', textTransform:'uppercase', color:'#C9920A', background:'#0E0E0E', padding:'5px 12px', border:'1px solid rgba(201,146,10,0.3)' }}>
-                  Now Available — Print &amp; eBook
+                  {AVAIL_BADGE}
                 </div>
               </div>
             </Reveal>
@@ -1710,14 +1766,14 @@ function YoungGsPage({ setPage }) {
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'28px' }}>
                 Cincinnati, Ohio — a city that rarely gets its story told on its own terms. Until now.
               </p>
-              <a href={AMAZON_BOOK_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">{BUY_LABEL} ↗</a>
+              <BuyButton variant="gold" />
             </Reveal>
           </div>
           <Reveal delay={120}>
             <div>
               <img
-                src="/book-cover.png"
-                alt="Full cover spread — Young Gs vs Old Gs"
+                src={FEATURED_BOOK.coverSrc}
+                alt={FEATURED_BOOK.coverAlt}
                 style={{ width:'100%', display:'block', objectFit:'cover', objectPosition:'left center', maxHeight:'440px', boxShadow:'0 20px 80px rgba(0,0,0,0.8)', border:'1px solid rgba(255,255,255,0.05)' }}
               />
               <p style={{ marginTop:'12px', fontFamily:"'Barlow Condensed','Arial Narrow',Arial,sans-serif", fontSize:'0.6rem', fontWeight:600, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.25)', textAlign:'center' }}>
@@ -1890,20 +1946,24 @@ function YoungGsPage({ setPage }) {
         <div className="absolute inset-0 pointer-events-none" style={{ background:'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(201,146,10,0.06) 0%, transparent 60%)' }} />
         <div className="relative z-10 max-w-2xl mx-auto px-6 lg:px-10">
           <Reveal>
-            <div className="yg-eyebrow" style={{ justifyContent:'center' }}>Available Now</div>
+            <div className="yg-eyebrow" style={{ justifyContent:'center' }}>{STATUS_BADGE}</div>
             <div className="yg-title" style={{ fontSize:'clamp(3rem,6vw,6rem)', marginBottom:'16px' }}>
               Get the<br /><span style={{ color:'#C9920A' }}>Book.</span>
             </div>
             <p style={{ fontSize:'0.98rem', color:'#B8B4AE', marginBottom:'32px', lineHeight:1.7 }}>
-              Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />Available in print and eBook everywhere books are sold.
+              {BUY_LIVE
+                ? <>Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />Available in paperback on Amazon.</>
+                : <>Young Gs vs Old Gs — a TBF Entertainment novel by O.G. Tom Tom.<br />The Amazon listing is coming soon. Join the TBF list for release updates — final formats and pricing will be announced.</>}
             </p>
+            {BUY_LIVE && (
+              <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
+                {['Paperback', FEATURED_BOOK.price, 'Amazon'].map(f => (
+                  <span key={f} className="yg-format-pill">{f}</span>
+                ))}
+              </div>
+            )}
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              {['Print — Paperback','eBook — Kindle','Amazon KDP','IngramSpark'].map(f => (
-                <span key={f} className="yg-format-pill">{f}</span>
-              ))}
-            </div>
-            <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              <a href={AMAZON_BOOK_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>{BUY_LABEL} ↗</a>
+              <BuyButton variant="gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }} />
               <button onClick={() => go('connect')} className="yg-btn-out" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Request ARC Copy</button>
             </div>
             <div style={{ marginTop:'40px', paddingTop:'28px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
@@ -2159,7 +2219,7 @@ function BooksPage({ setPage }) {
 
           <Reveal>
             <p className="eyebrow mb-4">Current Releases</p>
-            <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>Now Available</h2>
+            <h2 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>{STATUS_BADGE}</h2>
             <div className="blue-line" />
           </Reveal>
 
@@ -2184,7 +2244,7 @@ function BooksPage({ setPage }) {
                 <h3 className="font-display font-black uppercase text-white leading-none mb-2" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>
                   Young Gs vs Old Gs
                 </h3>
-                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>The Takeover — O.G. Tom Tom</p>
+                <p className="font-body uppercase tracking-[0.14em] mb-5" style={{ fontSize: '0.7rem', color: '#C9920A' }}>{FEATURED_BOOK.subtitle} — {FEATURED_BOOK.author}</p>
                 <p className="font-body text-tbf-silver leading-relaxed mb-6" style={{ fontSize: '0.96rem', maxWidth: '420px' }}>
                   A war in Cincinnati. Young Gs with nothing to lose. Four OG legends with forty years of patience. Two codes. One outcome.
                 </p>
@@ -2192,15 +2252,9 @@ function BooksPage({ setPage }) {
                   <button onClick={(e) => { e.stopPropagation(); go('youngGs'); }} className="btn-blue" style={{ background: '#C9920A', borderColor: '#C9920A', color: '#080808' }}>
                     View Book Page →
                   </button>
-                  <a
-                    href={AMAZON_BOOK_URL}
-                    target="_blank" rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="btn-outline-blue"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    {BUY_LABEL} ↗
-                  </a>
+                  <span onClick={(e) => e.stopPropagation()} style={{ display: 'inline-flex' }}>
+                    <BuyButton variant="outline" />
+                  </span>
                 </div>
               </div>
             </div>
