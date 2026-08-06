@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sign up for TBF Entertainment book, author event, and promotional text updates." />
+  <meta name="theme-color" content="#070707" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/compliance.css" />
+  <title>SMS Updates | TBF Entertainment</title>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/"><img src="/logo.png" alt="TBF Entertainment" /><span>TBF Entertainment</span></a>
+      <nav class="header-links" aria-label="Policy navigation">
+        <a href="/">Home</a><a href="/young-gs">Young Gs vs Old Gs</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero"><div class="header-inner hero-inner"><div><p class="eyebrow">Books. Authors. Events. TBF News.</p><h1>TBF Entertainment Text Updates</h1><p class="hero-copy">Sign up to receive occasional text messages from TBF Entertainment about book releases, author events, special announcements, promotions, and other TBF updates.</p></div></div></section>
+
+  <main class="page-shell">
+    <section class="form-card" aria-labelledby="sms-form-title">
+      <h2 id="sms-form-title">Join the SMS List</h2>
+      <p class="small-copy">Submitting this form does not purchase a book. You may buy <em>Young Gs vs Old Gs</em> separately through Amazon.</p>
+
+      <form id="sms-form" novalidate>
+        <div class="form-grid">
+          <div class="field"><label for="firstName">First Name</label><input id="firstName" name="firstName" type="text" maxlength="100" autocomplete="given-name" required /></div>
+          <div class="field"><label for="lastName">Last Name</label><input id="lastName" name="lastName" type="text" maxlength="100" autocomplete="family-name" required /></div>
+          <div class="field"><label for="phone">Mobile Phone Number</label><input id="phone" name="phone" type="tel" inputmode="tel" maxlength="25" autocomplete="tel" placeholder="(513) 555-0123" required /></div>
+          <div class="field"><label for="email">Email Address <span aria-hidden="true">— optional</span></label><input id="email" name="email" type="email" maxlength="320" autocomplete="email" /></div>
+
+          <div class="honeypot" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
+
+          <div class="consent-box">
+            <input id="smsConsent" name="smsConsent" type="checkbox" required />
+            <label class="consent-copy" for="smsConsent">I agree to receive recurring promotional and informational text messages from TBF Entertainment at the mobile number provided. Up to 4 messages per month. Message and data rates may apply. Consent is not a condition of purchase. Reply STOP to unsubscribe or HELP for assistance. View our <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>.</label>
+          </div>
+
+          <div class="field full"><button id="submit-button" type="submit">Sign Up for Text Updates</button></div>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="notice">
+      <h2>SMS Program Details</h2>
+      <p class="small-copy">TBF Entertainment sends up to 4 messages per month. Message and data rates may apply. Reply STOP to unsubscribe or HELP for assistance. Consent is not a condition of purchase. TBF does not sell mobile telephone information or share SMS opt-in data with third parties or affiliates for their own marketing.</p>
+      <!-- Buy link stays disabled until the Amazon listing is externally verified (no live link, no price shown). -->
+      <span class="primary-link" aria-disabled="true" style="opacity:.55;cursor:not-allowed;pointer-events:none;">Buy on Amazon — Coming Soon</span>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="site-footer-inner"><p>© <span id="year"></span> TBF Entertainment. All rights reserved.</p><div class="footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/sms-updates">SMS Updates</a><a href="mailto:info@tbfentertainment.art">Contact</a></div></div></footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const form = document.getElementById('sms-form');
+    const status = document.getElementById('status');
+    const button = document.getElementById('submit-button');
+    const policyVersion = '2026-07-26-v1';
+
+    function normalizePhone(value) {
+      const digits = String(value || '').replace(/\D/g, '');
+      if (digits.length === 10) return '+1' + digits;
+      if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+      return '';
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      status.className = 'status';
+      status.textContent = '';
+
+      if (!form.reportValidity()) return;
+      const phone = normalizePhone(form.phone.value);
+      if (!phone) {
+        status.className = 'status error';
+        status.textContent = 'Enter a valid 10-digit U.S. mobile number.';
+        form.phone.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Submitting…';
+      const consentText = document.querySelector('.consent-copy').innerText.trim();
+      const payload = {
+        firstName: form.firstName.value.trim(),
+        lastName: form.lastName.value.trim(),
+        phone,
+        email: form.email.value.trim(),
+        consent: form.smsConsent.checked,
+        consentText,
+        policyVersion,
+        source: window.location.href,
+        submittedAt: new Date().toISOString(),
+        _gotcha: form.website.value
+      };
+
+      try {
+        const response = await fetch('/api/sms-consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('Submission failed');
+        form.reset();
+        status.className = 'status success';
+        status.textContent = 'You are signed up. TBF will not begin marketing texts until the approved messaging program is active.';
+      } catch {
+        status.className = 'status error';
+        status.innerHTML = 'We could not save your request right now. Email <a href="mailto:info@tbfentertainment.art">info@tbfentertainment.art</a> for assistance.';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Sign Up for Text Updates';
+      }
+    });
+  </script>
+</body>
+</html>
