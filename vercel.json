@@ -3,7 +3,16 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/privacy-policy", "destination": "/privacy", "permanent": true },
+    { "source": "/sms-terms", "destination": "/sms-updates", "permanent": true },
+    { "source": "/sms-consent", "destination": "/sms-updates", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/sms-updates", "destination": "/sms-updates.html" },
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
   ]
 }

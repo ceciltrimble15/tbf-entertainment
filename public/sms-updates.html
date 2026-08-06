@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMS Updates &amp; Text Message Consent | TBF Entertainment</title>
+<meta name="description" content="Join TBF Entertainment text updates for book releases, events, and announcements. Up to 4 messages per month. Consent is not a condition of purchase. Reply STOP to unsubscribe, HELP for assistance.">
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="canonical" href="https://www.tbfentertainment.art/sms-updates">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080808;color:#f4f4f4;font-family:Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#8fc8ff}
+.shell{min-height:100vh;background:radial-gradient(circle at 80% 8%,rgba(30,144,255,.12),transparent 38%),#080808}
+.nav{padding:20px clamp(20px,5vw,72px);border-bottom:1px solid #242424;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.nav img{height:52px;width:auto;display:block}
+.nav a{text-decoration:none}
+.main{max-width:760px;margin:auto;padding:64px 24px 90px}
+.kicker{color:#1e90ff;text-transform:uppercase;letter-spacing:.18em;font-size:12px;font-weight:700}
+h1{font-family:'Barlow Condensed',Inter,sans-serif;font-size:clamp(40px,7vw,68px);text-transform:uppercase;margin:14px 0 10px;line-height:1.03;font-weight:900}
+.lede{color:#c9c9c9;line-height:1.75;margin:0 0 10px}
+.brandline{color:#8a8a8a;font-size:13px;margin:0 0 36px}
+.card{border:1px solid #242424;background:#0d0d0d;padding:clamp(22px,4vw,36px);margin-bottom:28px}
+.card h2{font-family:'Barlow Condensed',Inter,sans-serif;font-size:24px;text-transform:uppercase;margin:0 0 16px;letter-spacing:.04em}
+.field{margin-bottom:20px}
+.field label.lbl{display:block;margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#a0a0a0;font-weight:600}
+.field input[type=text],.field input[type=tel],.field input[type=email]{width:100%;padding:14px 16px;border:1px solid #2b2b2b;background:#080808;color:#fff;font-family:inherit;font-size:15px}
+.field input:focus{outline:none;border-color:#1e90ff}
+.optional{color:#6f6f6f;text-transform:none;letter-spacing:0;font-weight:400}
+.consent{display:flex;align-items:flex-start;gap:12px;padding:18px;border:1px solid rgba(30,144,255,.35);background:rgba(30,144,255,.05);cursor:pointer}
+.consent input{margin-top:4px;width:18px;height:18px;flex:0 0 auto;accent-color:#1e90ff}
+.consent span{font-size:13px;line-height:1.65;color:#c2c2c2}
+.btn{width:100%;margin-top:22px;padding:16px;background:#1e90ff;color:#fff;border:none;font-family:'Barlow Condensed',Inter,sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.msg{margin-top:20px;padding:16px 18px;font-size:14px;line-height:1.65;display:none}
+.msg.err{display:block;border:1px solid #c0392b;background:rgba(192,57,43,.12);color:#ffb4ab}
+.msg.ok{display:block;border:1px solid #1e8f4e;background:rgba(30,143,78,.12);color:#9be8bd}
+.terms dt{font-weight:700;color:#fff;margin-top:16px;font-size:14px}
+.terms dd{margin:6px 0 0;color:#bdbdbd;line-height:1.7;font-size:14px}
+.footer{border-top:1px solid #242424;padding:26px clamp(20px,5vw,72px);display:flex;flex-wrap:wrap;gap:18px;justify-content:center;color:#8a8a8a;font-size:13px}
+.footer a{color:#a9a9a9;text-decoration:none}
+@media(max-width:600px){.nav{flex-direction:column;align-items:flex-start}.main{padding-top:44px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="nav">
+    <a href="/"><img src="/logo.png" alt="TBF Entertainment"></a>
+    <a href="/">Return to TBF Entertainment</a>
+  </nav>
+
+  <main class="main">
+    <div class="kicker">TBF Entertainment</div>
+    <h1>SMS Updates</h1>
+    <p class="lede">Join the TBF text list for book releases, event announcements, and company updates &mdash; straight to your phone.</p>
+    <p class="brandline">Messages are sent by <strong>TBF Entertainment</strong> from <strong>(513) 866-3832</strong>. Signing up is optional and free.</p>
+
+    <div class="card">
+      <h2>Sign Up for Text Updates</h2>
+      <form id="consent-form" novalidate>
+        <div class="field">
+          <label class="lbl" for="name">Full Name</label>
+          <input type="text" id="name" name="name" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label class="lbl" for="phone">Mobile Number</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel" placeholder="(513) 555-1234" required>
+        </div>
+        <div class="field">
+          <label class="lbl" for="email">Email <span class="optional">(optional)</span></label>
+          <input type="email" id="email" name="email" autocomplete="email">
+        </div>
+
+        <label class="consent" for="smsConsent">
+          <input type="checkbox" id="smsConsent" name="smsConsent" value="true">
+          <span id="disclosure-text">
+            I agree to receive recurring book-release, event, informational, and promotional text
+            messages from TBF Entertainment at the mobile number provided. Up to 4 messages per month.
+            Message and data rates may apply. Consent is not a condition of purchase.
+            Reply STOP to unsubscribe. Reply HELP for assistance.
+            See our <a href="/privacy">Privacy Policy</a> and <a href="/terms">Terms of Service</a>.
+          </span>
+        </label>
+
+        <!-- Honeypot: hidden from humans, filled by bots. -->
+        <input type="text" name="_gotcha" id="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+
+        <button class="btn" type="submit" id="submit-btn">Sign Me Up</button>
+        <div class="msg" id="form-msg" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div class="card terms">
+      <h2>Program Details</h2>
+      <dl>
+        <dt>Program name</dt>
+        <dd>TBF Entertainment SMS Updates.</dd>
+        <dt>Message types</dt>
+        <dd>Recurring book-release, event, informational, and promotional messages, including new title announcements, release dates, signings and appearances, and company news.</dd>
+        <dt>Message frequency</dt>
+        <dd>Up to 4 messages per month.</dd>
+        <dt>Cost</dt>
+        <dd>Message and data rates may apply. TBF Entertainment does not charge for this program.</dd>
+        <dt>Consent is optional</dt>
+        <dd>Consent is not a condition of purchase. You can buy any TBF Entertainment title or attend any event without joining this list.</dd>
+        <dt>How to opt out</dt>
+        <dd>Reply <strong>STOP</strong> to any message to unsubscribe. You will receive one confirmation message and then no further messages.</dd>
+        <dt>How to get help</dt>
+        <dd>Reply <strong>HELP</strong> to any message, email <a href="mailto:info@tbfentertainment.art">info@tbfentertainment.art</a>, or call <a href="tel:+15138663832">(513) 866-3832</a>.</dd>
+        <dt>Carriers</dt>
+        <dd>Wireless carriers are not liable for delayed or undelivered messages.</dd>
+        <dt>Your data</dt>
+        <dd>Mobile information and SMS consent data are not sold. Mobile information and opt-in data are not shared with third parties or affiliates for their marketing or promotional purposes. See our <a href="/privacy">Privacy Policy</a>.</dd>
+      </dl>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="/sms-updates">SMS Updates</a>
+    <a href="mailto:info@tbfentertainment.art">info@tbfentertainment.art</a>
+    <a href="tel:+15138663832">(513) 866-3832</a>
+    <span>&copy; TBF Entertainment</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('consent-form');
+  var btn = document.getElementById('submit-btn');
+  var msg = document.getElementById('form-msg');
+  // Stable per-attempt id so a retry after a network error cannot double-write.
+  var submissionId = 'sc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+
+  function show(kind, text) {
+    msg.className = 'msg ' + kind;
+    msg.textContent = text;
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    show('', '');
+    msg.className = 'msg';
+
+    var consent = document.getElementById('smsConsent').checked;
+    if (!consent) {
+      show('err', 'Please check the consent box to receive text messages. Consent is required and is never assumed.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    var payload = {
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value,
+      smsConsent: consent,
+      _gotcha: document.getElementById('_gotcha').value,
+      submissionId: submissionId,
+      sourceUrl: window.location.href,
+      userAgent: navigator.userAgent
+    };
+
+    fetch('/api/sms-consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) { return res.json().then(function (d) { return { status: res.status, data: d }; }); })
+      .then(function (r) {
+        // Success is shown ONLY when the server confirms the record was stored.
+        if (r.status === 200 && r.data && r.data.ok === true && r.data.stored === true) {
+          form.style.display = 'none';
+          msg.style.display = 'block';
+          show('ok', 'You are signed up. Your consent was recorded on ' + r.data.consentRecordedAt +
+            '. Reply STOP to any message to unsubscribe, or HELP for assistance.');
+          return;
+        }
+        show('err', (r.data && r.data.error) || 'We could not record your consent. You are not subscribed. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Sign Me Up';
+      })
+      .catch(function () {
+        show('err', 'We could not reach the server, so you are NOT subscribed. Please try again, or email info@tbfentertainment.art.');
+        btn.disabled = false;
+        btn.textContent = 'Sign Me Up';
+      });
+  });
+})();
+</script>
+</body>
+</html>

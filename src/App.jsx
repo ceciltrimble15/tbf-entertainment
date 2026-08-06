@@ -323,20 +323,29 @@ function Footer({ setPage }) {
           <p className="font-body text-xs text-tbf-silver-dim tracking-wider">
             © {new Date().getFullYear()} TBF Entertainment. All rights reserved.
           </p>
-          <div className="flex gap-4 items-center">
-            <button
-              onClick={() => go('privacyPolicy')}
+          {/* A2P 10DLC: these must be real, publicly reachable URLs a carrier
+              reviewer can open directly — not client-side page state. */}
+          <div className="flex gap-4 items-center flex-wrap justify-center">
+            <a
+              href="/privacy"
               className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
             >
               Privacy Policy
-            </button>
+            </a>
             <span className="text-tbf-silver-dim text-xs">|</span>
-            <button
-              onClick={() => go('terms')}
+            <a
+              href="/terms"
               className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
             >
               Terms of Service
-            </button>
+            </a>
+            <span className="text-tbf-silver-dim text-xs">|</span>
+            <a
+              href="/sms-updates"
+              className="font-body text-xs text-tbf-silver-dim hover:text-white transition-colors duration-200"
+            >
+              SMS Updates
+            </a>
           </div>
         </div>
       </div>
@@ -453,6 +462,33 @@ function ConnectForm({ compact = false }) {
     setError('');
     setSending(true);
     try {
+      // A2P 10DLC: if the visitor ticked the SMS box, the consent record must be
+      // durably stored BEFORE we tell them anything succeeded. If it can't be
+      // stored, say so plainly rather than implying they're on the text list.
+      if (payload.smsConsent) {
+        const res = await fetch('/api/sms-consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: payload.name,
+            phone: payload.phone,
+            email: payload.email,
+            smsConsent: true,
+            sourceUrl: window.location.href,
+            userAgent: navigator.userAgent,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!(res.ok && data.ok === true && data.stored === true)) {
+          setError(
+            (data && data.error) ||
+            'We could not record your text-message consent, so you are NOT subscribed to texts. ' +
+            'Please try again, or email ' + CONTACT_EMAIL + '.'
+          );
+          setSending(false);
+          return;
+        }
+      }
       await submitLead(payload);
       setSubmitted(true);
     } catch {
@@ -496,7 +532,7 @@ function ConnectForm({ compact = false }) {
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message }); }} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit({ type, name, email, message, phone, smsConsent }); }} className="flex flex-col gap-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="eyebrow block mb-2">Name</label>
@@ -508,10 +544,13 @@ function ConnectForm({ compact = false }) {
         </div>
       </div>
       <div>
-        <label className="eyebrow block mb-2">Phone (optional)</label>
+        <label className="eyebrow block mb-2">
+          Mobile Phone {smsConsent ? '(required for text updates)' : '(optional)'}
+        </label>
         <input
-          type="tel" placeholder="Your phone number" value={phone}
+          type="tel" placeholder="Your mobile number" value={phone}
           onChange={(e) => setPhone(e.target.value)}
+          required={smsConsent}
           className={baseInput} style={inputStyle} onFocus={onFocus} onBlur={onBlur}
         />
       </div>
@@ -545,11 +584,13 @@ function ConnectForm({ compact = false }) {
           onChange={(e) => setSmsConsent(e.target.checked)}
           style={{ marginTop: '3px', accentColor: '#1E90FF', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
         />
+        {/* This wording must stay identical to TBF_DISCLOSURE in
+            lib/tbf-disclosure.js — it is what gets stored as consent evidence
+            and what the Twilio campaign registration quotes. */}
         <label htmlFor="smsConsent" className="font-body text-xs cursor-pointer" style={{ color: '#A0A0A0', lineHeight: '1.5' }}>
-          I agree to receive SMS text messages from TBF Entertainment at the number provided. Message frequency varies. Message and data rates may apply. Reply <strong style={{ color: '#E0E0E0' }}>STOP</strong> to unsubscribe at any time. Reply <strong style={{ color: '#E0E0E0' }}>HELP</strong> for help. See our{' '}
-          <a href="/privacy-policy" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Privacy Policy</a> and{' '}
+          I agree to receive recurring book-release, event, informational, and promotional text messages from TBF Entertainment at the mobile number provided. Up to 4 messages per month. Message and data rates may apply. Consent is not a condition of purchase. Reply <strong style={{ color: '#E0E0E0' }}>STOP</strong> to unsubscribe. Reply <strong style={{ color: '#E0E0E0' }}>HELP</strong> for assistance. See our{' '}
+          <a href="/privacy" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Privacy Policy</a> and{' '}
           <a href="/terms" style={{ color: '#1E90FF', textDecoration: 'underline' }}>Terms of Service</a>.
-          {' '}Mobile information will not be shared with third parties for marketing purposes.
         </label>
       </div>
       {error && <p className="font-body text-sm" style={{ color: '#E84040' }}>{error}</p>}

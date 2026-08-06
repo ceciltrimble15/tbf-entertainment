@@ -8,7 +8,8 @@
     "serve": "npx serve -l $PORT -s dist --no-clipboard",
     "build": "vite build",
     "build:standalone": "STANDALONE=1 vite build && cp dist-standalone/index.html standalone.html",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
