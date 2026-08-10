@@ -26,6 +26,7 @@ import {
   splitName,
   buildConsentRecord,
   clientIp,
+  isAffirmativeConsent,
 } from '../lib/consent.js';
 import {
   TBF_INFORMATIONAL_DISCLOSURE,
@@ -252,6 +253,77 @@ test('consent is never auto-converted between categories', () => {
   const mkt = validateConsent(bodyMktOnly, TBF_CONSENT_BRAND);
   assert.equal(mkt.value.consent.marketing, true);
   assert.equal(mkt.value.consent.informational, false);
+});
+
+// --- REGRESSION: informational-only must never store marketing (PR #8 defect) --
+// Cecil selected only Informational on the live Preview, but Airtable saved
+// Marketing Consent checked, both disclosures, and Marketing in Consent
+// Categories. Root cause: an unchecked box could emit a truthy value and the
+// server accepted the string "true". These lock the fix.
+
+test('affirmative consent requires a STRICT boolean true — nothing else', () => {
+  assert.equal(isAffirmativeConsent(true), true);
+  for (const v of ['true', 'false', 'on', 'No', 'Yes', 1, 0, '1', '', null, undefined, {}, []]) {
+    assert.equal(isAffirmativeConsent(v), false, `${JSON.stringify(v)} must NOT be treated as consent`);
+  }
+});
+
+test('EXACT informational-only Preview payload stores NO marketing evidence', async () => {
+  // Byte-for-byte the payload the opt-in page sends when only Informational is
+  // checked (marketingConsent is a real boolean false).
+  const exactPayload = {
+    name: 'Cecil Trimble',
+    phone: '(513) 555-0142',
+    email: '',
+    informationalConsent: true,
+    marketingConsent: false,
+    _gotcha: '',
+    submissionId: 'sc_preview_info_only',
+    sourceUrl: 'https://www.tbfentertainment.art/sms-updates',
+    userAgent: 'Mozilla/5.0 (preview)',
+  };
+  const store = recordingStore();
+  const res = mockRes();
+  await handleConsentRequest(mockReq('POST', exactPayload), res, TBF_CONSENT_BRAND, deps(store));
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.categories, ['informational']);
+
+  const r = store.calls[0].record;
+  assert.equal(r['Informational Consent'], 'Yes');
+  assert.equal(r['Marketing Consent'], 'No');
+  assert.equal(r['Marketing Disclosure'], '');
+  assert.equal(r['Consent Categories'], 'Informational');
+  assert.ok(!r.Notes.includes(TBF_MARKETING_DISCLOSURE), 'marketing disclosure must NOT appear');
+  assert.ok(!/Marketing/.test(r['Consent Categories']), 'Consent Categories must NOT include Marketing');
+});
+
+test('a stray truthy STRING on the unselected category cannot flip it on', async () => {
+  // Even if a buggy client emitted the checkbox `value` string "true" for an
+  // UNCHECKED marketing box, the server must not store marketing consent.
+  for (const stray of ['true', 'on', '1', 1, 'yes', 'Yes']) {
+    const store = recordingStore();
+    const res = mockRes();
+    await handleConsentRequest(
+      mockReq('POST', { ...bodyInfoOnly, marketingConsent: stray }),
+      res, TBF_CONSENT_BRAND, deps(store),
+    );
+    assert.equal(res.statusCode, 200, `informational still valid with stray marketing=${JSON.stringify(stray)}`);
+    assert.deepEqual(res.body.categories, ['informational']);
+    assert.equal(store.calls[0].record['Marketing Consent'], 'No', `marketing must stay No for stray ${JSON.stringify(stray)}`);
+  }
+});
+
+test('the opt-in page maps each checkbox by its own .checked (no value-attr footgun)', () => {
+  // No `value="true"` on the consent checkboxes — that attribute is the source
+  // of the always-"true" footgun.
+  assert.doesNotMatch(smsUpdatesHtml, /id="informationalConsent"[^>]*value=/, 'informational checkbox must have no value attribute');
+  assert.doesNotMatch(smsUpdatesHtml, /id="marketingConsent"[^>]*value=/, 'marketing checkbox must have no value attribute');
+  // Each category is read from its own checkbox's .checked, coerced to boolean.
+  assert.match(smsUpdatesHtml, /getElementById\('informationalConsent'\)\.checked === true/);
+  assert.match(smsUpdatesHtml, /getElementById\('marketingConsent'\)\.checked === true/);
+  // The consent flags are never sourced from .value.
+  assert.doesNotMatch(smsUpdatesHtml, /getElementById\('(informational|marketing)Consent'\)\.value/);
 });
 
 // --- body parsing + evidence completeness -----------------------------------

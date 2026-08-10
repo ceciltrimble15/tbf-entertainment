@@ -77,7 +77,7 @@ h1{font-family:'Barlow Condensed',Inter,sans-serif;font-size:clamp(40px,7vw,68px
         <p class="consent-intro" style="font-size:13px;color:#a0a0a0;margin:4px 0 12px">Choose the text messages you want. These are two separate opt-ins — pick either, both, or neither. Leaving both unchecked means you will not be subscribed.</p>
 
         <label class="consent" for="informationalConsent">
-          <input type="checkbox" id="informationalConsent" name="informationalConsent" value="true">
+          <input type="checkbox" id="informationalConsent" name="informationalConsent">
           <span id="informational-disclosure">
             I agree to receive recurring informational and customer-care text messages from TBF Entertainment
             related to information I request, event logistics, reader support, and service updates.
@@ -88,7 +88,7 @@ h1{font-family:'Barlow Condensed',Inter,sans-serif;font-size:clamp(40px,7vw,68px
         </label>
 
         <label class="consent" for="marketingConsent" style="margin-top:14px">
-          <input type="checkbox" id="marketingConsent" name="marketingConsent" value="true">
+          <input type="checkbox" id="marketingConsent" name="marketingConsent">
           <span id="marketing-disclosure">
             I separately agree to receive recurring promotional and marketing text messages from TBF Entertainment,
             including new book releases, pre-orders, appearances, events, special offers, and promotions.
@@ -160,8 +160,12 @@ h1{font-family:'Barlow Condensed',Inter,sans-serif;font-size:clamp(40px,7vw,68px
     show('', '');
     msg.className = 'msg';
 
-    var informationalConsent = document.getElementById('informationalConsent').checked;
-    var marketingConsent = document.getElementById('marketingConsent').checked;
+    // Read each checkbox's live checked-state INDEPENDENTLY and coerce to a
+    // strict boolean. We never read .value (which would be a constant), so an
+    // unchecked box can never emit a truthy value, and one box's state can
+    // never influence the other.
+    var informationalConsent = document.getElementById('informationalConsent').checked === true;
+    var marketingConsent = document.getElementById('marketingConsent').checked === true;
     // Two independent opt-ins. At least one must be selected; neither means no
     // subscription. We never merge or convert one category into the other.
     if (!informationalConsent && !marketingConsent) {
