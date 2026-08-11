@@ -181,8 +181,8 @@ test('INFORMATIONAL ONLY succeeds and stores informational=Yes, marketing=No', a
   assert.deepEqual(res.body.categories, ['informational']);
 
   const r = store.calls[0].record;
-  assert.equal(r['Informational Consent'], 'Yes');
-  assert.equal(r['Marketing Consent'], 'No');
+  assert.equal(r['Informational Consent'], true);
+  assert.equal(r['Marketing Consent'], false);
   assert.equal(r['SMS Consent'], 'Yes');
   assert.equal(r['Consent Categories'], 'Informational');
   // Only the selected category's verbatim disclosure is stored.
@@ -201,8 +201,8 @@ test('MARKETING ONLY succeeds and stores marketing=Yes, informational=No', async
   assert.deepEqual(res.body.categories, ['marketing']);
 
   const r = store.calls[0].record;
-  assert.equal(r['Marketing Consent'], 'Yes');
-  assert.equal(r['Informational Consent'], 'No');
+  assert.equal(r['Marketing Consent'], true);
+  assert.equal(r['Informational Consent'], false);
   assert.equal(r['SMS Consent'], 'Yes');
   assert.equal(r['Consent Categories'], 'Marketing');
   assert.equal(r['Marketing Disclosure'], TBF_MARKETING_DISCLOSURE);
@@ -219,8 +219,8 @@ test('BOTH selected stores both=Yes', async () => {
   assert.deepEqual(res.body.categories, ['informational', 'marketing']);
 
   const r = store.calls[0].record;
-  assert.equal(r['Informational Consent'], 'Yes');
-  assert.equal(r['Marketing Consent'], 'Yes');
+  assert.equal(r['Informational Consent'], true);
+  assert.equal(r['Marketing Consent'], true);
   assert.equal(r['SMS Consent'], 'Yes');
   assert.equal(r['Consent Categories'], 'Informational, Marketing');
   assert.ok(r.Notes.includes(TBF_INFORMATIONAL_DISCLOSURE));
@@ -290,8 +290,8 @@ test('EXACT informational-only Preview payload stores NO marketing evidence', as
   assert.deepEqual(res.body.categories, ['informational']);
 
   const r = store.calls[0].record;
-  assert.equal(r['Informational Consent'], 'Yes');
-  assert.equal(r['Marketing Consent'], 'No');
+  assert.equal(r['Informational Consent'], true);
+  assert.equal(r['Marketing Consent'], false);
   assert.equal(r['Marketing Disclosure'], '');
   assert.equal(r['Consent Categories'], 'Informational');
   assert.ok(!r.Notes.includes(TBF_MARKETING_DISCLOSURE), 'marketing disclosure must NOT appear');
@@ -310,7 +310,7 @@ test('a stray truthy STRING on the unselected category cannot flip it on', async
     );
     assert.equal(res.statusCode, 200, `informational still valid with stray marketing=${JSON.stringify(stray)}`);
     assert.deepEqual(res.body.categories, ['informational']);
-    assert.equal(store.calls[0].record['Marketing Consent'], 'No', `marketing must stay No for stray ${JSON.stringify(stray)}`);
+    assert.equal(store.calls[0].record['Marketing Consent'], false, `marketing must stay No for stray ${JSON.stringify(stray)}`);
   }
 });
 
@@ -324,6 +324,68 @@ test('the opt-in page maps each checkbox by its own .checked (no value-attr foot
   assert.match(smsUpdatesHtml, /getElementById\('marketingConsent'\)\.checked === true/);
   // The consent flags are never sourced from .value.
   assert.doesNotMatch(smsUpdatesHtml, /getElementById\('(informational|marketing)Consent'\)\.value/);
+});
+
+// --- REGRESSION: all four combinations, ACTUAL browser payload, Airtable-shape --
+// The Airtable "Informational Consent" / "Marketing Consent" fields are CHECKBOX
+// (boolean) fields. Storing the string "No" would be coerced by typecast into a
+// CHECKED box — the exact live defect. These assert real booleans, independent
+// disclosures, and an accurate Consent Categories list for every combination,
+// using the exact payload shape the /sms-updates page posts.
+const browserPayload = (info, mkt) => ({
+  name: 'Cecil Trimble',
+  phone: '(513) 555-0142',
+  email: '',
+  informationalConsent: info, // real booleans, exactly as the page sends
+  marketingConsent: mkt,
+  _gotcha: '',
+  submissionId: `sc_combo_${info ? 'i' : ''}${mkt ? 'm' : ''}`,
+  sourceUrl: 'https://www.tbfentertainment.art/sms-updates',
+  userAgent: 'Mozilla/5.0 (regression)',
+});
+
+test('COMBO informational-only → Informational true, Marketing false (checkbox booleans)', async () => {
+  const store = recordingStore(); const res = mockRes();
+  await handleConsentRequest(mockReq('POST', browserPayload(true, false)), res, TBF_CONSENT_BRAND, deps(store));
+  assert.equal(res.statusCode, 200);
+  const r = store.calls[0].record;
+  assert.strictEqual(r['Informational Consent'], true);
+  assert.strictEqual(r['Marketing Consent'], false);   // must be boolean false, NOT the string 'No'
+  assert.equal(r['Informational Disclosure'], TBF_INFORMATIONAL_DISCLOSURE);
+  assert.equal(r['Marketing Disclosure'], '');
+  assert.equal(r['Consent Categories'], 'Informational');
+});
+
+test('COMBO marketing-only → Marketing true, Informational false (checkbox booleans)', async () => {
+  const store = recordingStore(); const res = mockRes();
+  await handleConsentRequest(mockReq('POST', browserPayload(false, true)), res, TBF_CONSENT_BRAND, deps(store));
+  assert.equal(res.statusCode, 200);
+  const r = store.calls[0].record;
+  assert.strictEqual(r['Marketing Consent'], true);
+  assert.strictEqual(r['Informational Consent'], false);
+  assert.equal(r['Marketing Disclosure'], TBF_MARKETING_DISCLOSURE);
+  assert.equal(r['Informational Disclosure'], '');
+  assert.equal(r['Consent Categories'], 'Marketing');
+});
+
+test('COMBO both → both true, both disclosures stored (checkbox booleans)', async () => {
+  const store = recordingStore(); const res = mockRes();
+  await handleConsentRequest(mockReq('POST', browserPayload(true, true)), res, TBF_CONSENT_BRAND, deps(store));
+  assert.equal(res.statusCode, 200);
+  const r = store.calls[0].record;
+  assert.strictEqual(r['Informational Consent'], true);
+  assert.strictEqual(r['Marketing Consent'], true);
+  assert.equal(r['Informational Disclosure'], TBF_INFORMATIONAL_DISCLOSURE);
+  assert.equal(r['Marketing Disclosure'], TBF_MARKETING_DISCLOSURE);
+  assert.equal(r['Consent Categories'], 'Informational, Marketing');
+});
+
+test('COMBO neither → rejected 400, nothing stored (no invented consent)', async () => {
+  const store = recordingStore(); const res = mockRes();
+  await handleConsentRequest(mockReq('POST', browserPayload(false, false)), res, TBF_CONSENT_BRAND, deps(store));
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.ok, false);
+  assert.equal(store.calls.length, 0);
 });
 
 // --- body parsing + evidence completeness -----------------------------------
@@ -349,8 +411,8 @@ test('the stored record carries every required consent-evidence field', async ()
   assert.equal(r['Last Name'], 'Reeves');
   assert.equal(r.Email, 'jordan@example.com');
   assert.equal(r.Phone, '+15135550142');
-  assert.equal(r['Informational Consent'], 'Yes');
-  assert.equal(r['Marketing Consent'], 'Yes');
+  assert.equal(r['Informational Consent'], true);
+  assert.equal(r['Marketing Consent'], true);
   assert.equal(r['SMS Consent'], 'Yes');
   assert.equal(r['SMS Consent Timestamp'], FIXED_TIME);
   assert.equal(r['SMS Consent Source'], 'https://www.tbfentertainment.art/sms-updates');
@@ -521,8 +583,8 @@ test('buildConsentRecord reflects exactly the categories selected', () => {
     { submissionId: 'x', timestamp: FIXED_TIME, sourceUrl: 'u', userAgent: '', ip: '' },
     TBF_CONSENT_BRAND,
   );
-  assert.equal(infoOnly['Informational Consent'], 'Yes');
-  assert.equal(infoOnly['Marketing Consent'], 'No');
+  assert.equal(infoOnly['Informational Consent'], true);
+  assert.equal(infoOnly['Marketing Consent'], false);
   assert.equal(infoOnly['SMS Consent'], 'Yes');
 
   const none = buildConsentRecord(
@@ -531,8 +593,8 @@ test('buildConsentRecord reflects exactly the categories selected', () => {
     TBF_CONSENT_BRAND,
   );
   assert.equal(none['SMS Consent'], 'No');
-  assert.equal(none['Informational Consent'], 'No');
-  assert.equal(none['Marketing Consent'], 'No');
+  assert.equal(none['Informational Consent'], false);
+  assert.equal(none['Marketing Consent'], false);
 });
 
 // --- public routes are real pages, not the SPA shell ------------------------
