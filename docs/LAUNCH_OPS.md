@@ -15,7 +15,7 @@ Operational hub for launching **_Young G's vs. Old G's: The Takeover_** by O.G. 
 
 The site is a single-page React/Vite app (`src/App.jsx`). State-based routing — every page lives at `/`.
 
-- **Deploy:** `npm run build` → `dist/` (configured in `vercel.json`, framework `vite`). Images in `public/` resolve to `/logo.png`, `/book-cover.png` after build.
+- **Deploy:** `npm run build` → `dist/` (configured in `vercel.json`, framework `vite`). Images in `public/` resolve to `/logo.png`, `/young-gs-vs-old-gs-approved-2026.jpg` after build.
 - **Portable single file:** `npm run build:standalone` regenerates `standalone.html` (self-contained, for email/preview). Do **not** hand-edit it — it is generated from `src/`.
 
 ## Lead capture — REQUIRED before launch
