@@ -1,5 +1,12 @@
 # Airtable Publishing Tracker
 
+> **Superseded for pipeline work.** This lean four-table spec was written for the
+> _Young G's_ launch. The full operating system now lives in the
+> **TBF Entertainment Publishing Command Center** base (`appwnC45fLK2SCgzW`) — see
+> [`BOOK_DISTRIBUTION_OS.md`](BOOK_DISTRIBUTION_OS.md). Keep this file for the Leads and
+> Retail Outreach table specs, which the OS does not replace; use the OS doc for Titles,
+> Editions, ISBNs, channels and tasks.
+
 A single Airtable base, **"TBF Publishing"**, to run the launch. Build the four tables below. This is intentionally lean — enough to manage _Young G's vs. Old G's_ and grow into a catalog, nothing more.
 
 > Tip: Airtable's free plan is sufficient. Create the base manually, or import this spec. If you wire Formspree → Airtable, point it at the **Leads** table.
