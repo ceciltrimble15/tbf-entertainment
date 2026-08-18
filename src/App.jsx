@@ -1,6 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 
 /* ─────────────────────────────────────────────────────────
+   VERIFIED AMAZON LISTING — SINGLE SOURCE OF TRUTH
+
+   Cecil approved this ASIN and direct product URL for the
+   production book-buying path on August 18, 2026.
+───────────────────────────────────────────────────────── */
+const FEATURED_BOOK = Object.freeze({
+  asin: 'B0H962BXXC',
+  amazonUrl: 'https://www.amazon.com/dp/B0H962BXXC',
+});
+const AMAZON_VERIFIED = true;
+const AMAZON_URL = AMAZON_VERIFIED ? FEATURED_BOOK.amazonUrl : '';
+
+/* ─────────────────────────────────────────────────────────
    LEAD CAPTURE CONFIG
 
    The email-capture and contact forms POST here. Set
@@ -200,6 +213,9 @@ function Nav({ page, setPage }) {
               {l}
             </button>
           ))}
+          <a href="/sms-updates" className="nav-link">
+            Text Updates
+          </a>
         </div>
 
         {/* Desktop CTA */}
@@ -240,6 +256,9 @@ function Nav({ page, setPage }) {
               {l}
             </button>
           ))}
+          <a href="/sms-updates" className="nav-link text-left text-sm">
+            Text Updates
+          </a>
           <button onClick={() => go('Connect')} className="btn-outline-blue text-xs mt-2">
             Get in Touch
           </button>
@@ -766,13 +785,16 @@ function HomePage({ setPage }) {
 
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                  href={AMAZON_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-blue"
                   style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 >
                   Buy on Amazon <span style={{ fontSize: '0.85em' }}>↗</span>
+                </a>
+                <a href="/sms-updates" className="btn-outline-blue" style={{ textDecoration: 'none' }}>
+                  Get Text Updates
                 </a>
                 <button onClick={() => go('youngGs')} className="btn-outline-blue">
                   Full Details →
@@ -1135,7 +1157,7 @@ function PublishingPage({ setPage }) {
                     <span className="font-body font-semibold uppercase tracking-[0.15em] text-tbf-blue" style={{ fontSize: '0.65rem' }}>Now Available</span>
                   </div>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={AMAZON_URL}
                     target="_blank" rel="noopener noreferrer"
                     className="btn-blue w-full text-center"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
@@ -1239,7 +1261,7 @@ function PublishingPage({ setPage }) {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+The+Takeover+OG+Tom+Tom"
+                    href={AMAZON_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-blue text-center"
@@ -1663,7 +1685,7 @@ function YoungGsPage({ setPage }) {
                   Two generations. Two codes. When <strong style={{ color:'#F0EDE8', fontWeight:500 }}>respect turns to envy</strong> and <strong style={{ color:'#F0EDE8', fontWeight:500 }}>loyalty turns to betrayal</strong>, the city becomes a battlefield. One war that will change everything.
                 </p>
                 <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
-                  <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
+                  <a href={AMAZON_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Buy on Amazon ↗</a>
                   <button onClick={() => go('connect')} className="yg-btn-out">Request ARC Copy</button>
                 </div>
               </Reveal>
@@ -1743,7 +1765,7 @@ function YoungGsPage({ setPage }) {
               <p style={{ fontSize:'0.96rem', color:'#B8B4AE', lineHeight:1.8, marginBottom:'28px' }}>
                 Cincinnati, Ohio — a city that rarely gets its story told on its own terms. Until now.
               </p>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
+              <a href={AMAZON_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold">Get the Book ↗</a>
             </Reveal>
           </div>
           <Reveal delay={120}>
@@ -1936,7 +1958,7 @@ function YoungGsPage({ setPage }) {
               ))}
             </div>
             <div style={{ display:'flex', justifyContent:'center', gap:'12px', flexWrap:'wrap', marginBottom:'28px' }}>
-              <a href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom" target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
+              <a href={AMAZON_URL} target="_blank" rel="noopener noreferrer" className="yg-btn-gold" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Buy on Amazon ↗</a>
               <button onClick={() => go('connect')} className="yg-btn-out" style={{ fontSize:'0.82rem', padding:'15px 38px' }}>Request ARC Copy</button>
             </div>
             <div style={{ marginTop:'40px', paddingTop:'28px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
@@ -2226,7 +2248,7 @@ function BooksPage({ setPage }) {
                     View Book Page →
                   </button>
                   <a
-                    href="https://www.amazon.com/s?k=Young+Gs+vs+Old+Gs+OG+Tom+Tom"
+                    href={AMAZON_URL}
                     target="_blank" rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="btn-outline-blue"
@@ -2395,7 +2417,7 @@ function PrivacyPolicyPage({ setPage }) {
         <h2 className="font-display text-lg font-semibold text-white mb-2">3. SMS Communications and Mobile Data</h2>
         <p>If you opt-in to receive SMS messages from TBF Entertainment, we will use your phone number to send marketing and informational updates.</p>
         <p className="mt-3 font-semibold text-white">No Mobile Information Sharing: Mobile information and consent data will not be shared with, sold to, or rented to third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent will be kept strictly confidential.</p>
-        <p className="mt-3">Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe at any time. Reply HELP for help. For support, contact info@tbfentertainment.art or call 513-866-3832.</p>
+        <p className="mt-3">Up to 4 messages per month. Message and data rates may apply. Reply STOP to unsubscribe at any time. Reply HELP for help. For support, contact info@tbfentertainment.art or call 513-866-3832.</p>
       </div>
 
       <div>
@@ -2432,7 +2454,7 @@ function TermsPage({ setPage }) {
       <div>
         <h2 className="font-display text-lg font-semibold text-white mb-2">2. SMS Messaging Terms</h2>
         <p>By providing your phone number and checking the SMS consent box on our Connect form, you expressly consent to receive recurring automated marketing text messages from TBF Entertainment at the number provided. Consent is not a condition of purchase.</p>
-        <p className="mt-3">Message frequency varies. Message and data rates may apply.</p>
+        <p className="mt-3">Up to 4 messages per month. Message and data rates may apply.</p>
         <p className="mt-3 font-semibold text-white">To opt out: Reply STOP to any message. You will receive a confirmation and no further messages will be sent.</p>
         <p className="mt-3 font-semibold text-white">For help: Reply HELP or contact info@tbfentertainment.art or call 513-866-3832.</p>
         <p className="mt-3">Supported carriers are not liable for delayed or undelivered messages.</p>
