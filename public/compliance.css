@@ -1,0 +1,182 @@
+:root {
+  color-scheme: dark;
+  --bg: #070707;
+  --panel: #101010;
+  --panel-2: #151515;
+  --text: #f4f4f4;
+  --muted: #b2b2b2;
+  --line: #292929;
+  --blue: #1e90ff;
+  --blue-soft: rgba(30, 144, 255, 0.12);
+  --danger: #ff6868;
+  --success: #66d99a;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--blue); }
+a:hover { color: #77bdff; }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid rgba(30, 144, 255, 0.55);
+  outline-offset: 3px;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  background: rgba(7, 7, 7, 0.94);
+  backdrop-filter: blur(12px);
+}
+.header-inner, .page-shell, .site-footer-inner {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+}
+.header-inner {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  text-decoration: none;
+  font-family: "Barlow Condensed", Impact, sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.brand img { width: 58px; height: 58px; object-fit: contain; }
+.header-links { display: flex; flex-wrap: wrap; gap: 16px; }
+.header-links a { color: var(--muted); text-decoration: none; font-size: .85rem; }
+.header-links a:hover { color: var(--text); }
+
+.hero {
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 75% 20%, rgba(30, 144, 255, .14), transparent 38%),
+    linear-gradient(180deg, #0d0d0d 0%, #070707 100%);
+}
+.hero-inner { padding: 78px 0 66px; }
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--blue);
+  font-size: .72rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+h1, h2, h3 {
+  font-family: "Barlow Condensed", Impact, sans-serif;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+}
+h1 { margin: 0; font-size: clamp(2.65rem, 7vw, 5.6rem); }
+h2 { margin: 0 0 16px; font-size: clamp(1.8rem, 4vw, 2.8rem); }
+h3 { margin: 26px 0 8px; font-size: 1.35rem; }
+.hero-copy { max-width: 760px; color: var(--muted); font-size: 1.02rem; }
+
+.page-shell { padding: 54px 0 76px; }
+.policy-card, .form-card, .notice {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: clamp(22px, 4vw, 42px);
+}
+.policy-card + .policy-card { margin-top: 20px; }
+.policy-card p, .policy-card li { color: #d0d0d0; }
+ul { padding-left: 22px; }
+strong { color: var(--text); }
+.effective {
+  display: inline-flex;
+  padding: 8px 12px;
+  border: 1px solid rgba(30, 144, 255, .35);
+  background: var(--blue-soft);
+  color: #bdddff;
+  font-size: .82rem;
+  margin-top: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field.full { grid-column: 1 / -1; }
+label { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
+input[type="text"], input[type="email"], input[type="tel"] {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid #353535;
+  background: #090909;
+  color: var(--text);
+  padding: 12px 14px;
+  font: inherit;
+  border-radius: 2px;
+}
+.consent-box {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(30, 144, 255, .35);
+  background: rgba(30, 144, 255, .06);
+}
+.consent-box input { width: 20px; height: 20px; margin-top: 3px; flex: 0 0 auto; }
+.consent-copy { color: #d4d4d4; font-size: .9rem; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.small-copy { color: var(--muted); font-size: .82rem; }
+.honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
+button[type="submit"], .primary-link {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--blue);
+  background: var(--blue);
+  color: #050505;
+  padding: 13px 22px;
+  font-family: "Barlow Condensed", Impact, sans-serif;
+  font-size: 1rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+}
+button[type="submit"]:disabled { opacity: .55; cursor: wait; }
+.status { min-height: 28px; margin-top: 16px; font-size: .92rem; }
+.status.error { color: var(--danger); }
+.status.success { color: var(--success); }
+
+.notice { margin-top: 20px; background: var(--panel-2); }
+.notice h2 { font-size: 1.6rem; }
+
+.site-footer { border-top: 1px solid var(--line); background: #040404; }
+.site-footer-inner { padding: 34px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; }
+.site-footer p { margin: 0; color: var(--muted); font-size: .8rem; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 14px; }
+.footer-links a { color: var(--muted); font-size: .8rem; }
+
+@media (max-width: 720px) {
+  .header-inner { align-items: flex-start; padding: 10px 0; flex-direction: column; }
+  .header-links { padding-bottom: 10px; }
+  .hero-inner { padding: 52px 0 46px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .field.full, .consent-box { grid-column: 1; }
+  .policy-card, .form-card, .notice { padding: 22px; }
+}
