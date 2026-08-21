@@ -408,6 +408,12 @@ function Footer({ setPage }) {
           <p className="font-body text-xs text-tbf-silver-dim tracking-wider">
             © {new Date().getFullYear()} TBF Entertainment. All rights reserved.
           </p>
+          {/* Legal links — plain anchors to the static compliance pages (served via Vercel rewrites) */}
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2" aria-label="Legal">
+            <a href="/privacy" className="font-body text-xs text-tbf-silver-dim tracking-wider hover:text-tbf-blue transition-colors duration-200">Privacy</a>
+            <a href="/terms" className="font-body text-xs text-tbf-silver-dim tracking-wider hover:text-tbf-blue transition-colors duration-200">Terms</a>
+            <a href="/sms-updates" className="font-body text-xs text-tbf-silver-dim tracking-wider hover:text-tbf-blue transition-colors duration-200">SMS Updates</a>
+          </nav>
           <p className="font-body text-xs text-tbf-silver-dim tracking-wider">
             tbfentertainment.art
           </p>
