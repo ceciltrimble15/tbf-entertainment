@@ -5,13 +5,35 @@
 // stays off until the TBF A2P campaign is approved by the carriers.
 
 import { handleConsentRequest } from '../lib/consent.js';
-import { TBF_DISCLOSURE, TBF_DISCLOSURE_VERSION } from '../lib/tbf-disclosure.js';
+import {
+  TBF_INFORMATIONAL_DISCLOSURE,
+  TBF_MARKETING_DISCLOSURE,
+  TBF_DISCLOSURE_VERSION,
+} from '../lib/tbf-disclosure.js';
 
 export const TBF_CONSENT_BRAND = {
   id: 'tbf',
   formType: 'SMS Updates',
   campaignStatus: 'Pending A2P activation',
-  disclosure: TBF_DISCLOSURE,
+
+  // Two INDEPENDENT consent categories. A subscriber may select either, both,
+  // or neither (neither = no subscription). Categories are never bundled,
+  // merged, or auto-converted into one another — each is its own opt-in with
+  // its own verbatim disclosure and its own stored Yes/No evidence.
+  consentCategories: [
+    {
+      key: 'informational',
+      field: 'informationalConsent',
+      label: 'Informational',
+      disclosure: TBF_INFORMATIONAL_DISCLOSURE,
+    },
+    {
+      key: 'marketing',
+      field: 'marketingConsent',
+      label: 'Marketing',
+      disclosure: TBF_MARKETING_DISCLOSURE,
+    },
+  ],
   disclosureVersion: TBF_DISCLOSURE_VERSION,
   defaultSourceUrl: 'https://www.tbfentertainment.art/sms-updates',
   // TBF collects no relationship field — that is an A/1 Suppliers requirement.

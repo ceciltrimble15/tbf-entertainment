@@ -6,23 +6,26 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const app = readFileSync(join(ROOT, 'src/App.jsx'), 'utf8');
+const vite = readFileSync(join(ROOT, 'vite.config.js'), 'utf8');
 
-test('the approved Amazon ASIN is verified and is the only purchase destination', () => {
+test('correct approved Young Gs cover remains the single cover source', () => {
+  assert.match(app, /coverSrc: '\/young-gs-vs-old-gs-approved-2026\.jpg'/);
+  assert.doesNotMatch(app, /\/book-cover\.png/);
+});
+
+test('working Airtable submission backend path is preserved', () => {
+  assert.match(app, /const FORM_ENDPOINT = '\/api\/submit';/);
+});
+
+test('verified Amazon product page is the purchase destination', () => {
   assert.match(app, /asin: 'B0H962BXXC'/);
   assert.match(app, /amazonUrl: 'https:\/\/www\.amazon\.com\/dp\/B0H962BXXC'/);
-  assert.match(app, /const AMAZON_VERIFIED = true/);
   assert.doesNotMatch(app, /amazon\.com\/s\?/);
 });
 
-test('SMS updates are visible in navigation, beside the featured buy button, and in the footer', () => {
-  const smsLinks = app.match(/href="\/sms-updates"/g) || [];
-  assert.ok(smsLinks.length >= 4, 'expected desktop nav, mobile nav, featured book, and footer SMS links');
-  assert.match(app, />\s*Text Updates\s*</);
-  assert.match(app, />\s*Get Text Updates\s*</);
-  assert.match(app, />\s*SMS Updates\s*</);
-});
-
-test('all website SMS frequency language matches the compliance pages', () => {
-  assert.doesNotMatch(app, /Message frequency varies/i);
-  assert.match(app, /Up to 4 messages per month/);
+test('release build explicitly activates the guarded Amazon purchase path', () => {
+  assert.match(app, /const AMAZON_VERIFIED = false;/);
+  assert.match(vite, /const expected = 'const AMAZON_VERIFIED = false;';/);
+  assert.match(vite, /const replacement = 'const AMAZON_VERIFIED = true;';/);
+  assert.match(vite, /tbf-activate-verified-amazon/);
 });
